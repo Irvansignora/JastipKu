@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – JastipKu</title>
+  <link rel="stylesheet" href="/css/admin.css"/>
+</head>
+<body>
+
+<div class="admin-wrap">
+
+<!-- ======= SIDEBAR ======= -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <h1 id="adminStoreName">⚙️ JastipKu</h1>
+    <p>Panel Admin</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">Utama</div>
+    <button class="nav-link" data-section="dashboard" onclick="showSection('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </button>
+    <button class="nav-link" data-section="orders" onclick="showSection('orders')">
+      <span class="icon">📦</span> Pesanan
+    </button>
+    <div class="nav-section-title">Katalog</div>
+    <button class="nav-link" data-section="products" onclick="showSection('products')">
+      <span class="icon">🍱</span> Produk
+    </button>
+    <button class="nav-link" data-section="categories" onclick="showSection('categories')">
+      <span class="icon">📂</span> Kategori
+    </button>
+    <div class="nav-section-title">Konten</div>
+    <button class="nav-link" data-section="banners" onclick="showSection('banners')">
+      <span class="icon">📢</span> Banner & Promo
+    </button>
+    <div class="nav-section-title">Sistem</div>
+    <button class="nav-link" data-section="settings" onclick="showSection('settings')">
+      <span class="icon">⚙️</span> Pengaturan
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/" target="_blank">🛵 Lihat Toko →</a>
+  </div>
+</aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+<!-- ======= MAIN ======= -->
+<main class="admin-main">
+
+  <!-- TOPBAR -->
+  <div class="admin-topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="mobile-menu-btn" onclick="openMobileSidebar()">☰</button>
+      <span class="page-heading" id="pageHeading">📊 Dashboard</span>
+    </div>
+    <div class="topbar-actions">
+      <a href="/" target="_blank" class="btn btn-ghost btn-sm">🛵 Lihat Toko</a>
+    </div>
+  </div>
+
+  <div class="admin-content">
+
+  <!-- ======= DASHBOARD ======= -->
+  <div id="sec-dashboard" class="admin-section">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">📦 Pesanan Hari Ini</span>
+        <span class="stat-val" id="statTodayOrders">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">⏳ Menunggu Konfirmasi</span>
+        <span class="stat-val" id="statPending">0</span>
+        <span class="stat-badge warn">Perlu tindakan</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">💰 Pendapatan Hari Ini</span>
+        <span class="stat-val" id="statTodayRevenue" style="font-size:1.2rem">Rp 0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">📈 Total Pendapatan</span>
+        <span class="stat-val" id="statTotalRevenue" style="font-size:1.2rem">Rp 0</span>
+        <span class="stat-badge up">All time</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">🍱 Produk</span>
+        <span class="stat-val" id="statProducts">0</span>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>📦 Pesanan Terbaru</h2>
+        <button class="btn btn-sm btn-ghost" onclick="showSection('orders')">Lihat Semua →</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Waktu</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="recentOrdersTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= PRODUCTS ======= -->
+  <div id="sec-products" class="admin-section" style="display:none">
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>🍱 Daftar Produk</h2>
+        <button class="btn btn-primary btn-sm" onclick="openProductModal()">➕ Tambah Produk</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Emoji</th><th>Nama & Deskripsi</th><th>Kategori</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="productsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= CATEGORIES ======= -->
+  <div id="sec-categories" class="admin-section" style="display:none">
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>📂 Daftar Kategori</h2>
+        <button class="btn btn-primary btn-sm" onclick="openCatModal()">➕ Tambah Kategori</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Emoji</th><th>Nama</th><th>Produk</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="catsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= ORDERS ======= -->
+  <div id="sec-orders" class="admin-section" style="display:none">
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>📦 Manajemen Pesanan</h2>
+        <select id="orderFilter" class="form-control" style="width:auto;padding:6px 12px" onchange="renderOrders()">
+          <option value="all">Semua</option>
+          <option value="pending">⏳ Menunggu</option>
+          <option value="process">⚙️ Diproses</option>
+          <option value="delivery">🛵 Dikirim</option>
+          <option value="done">✅ Selesai</option>
+          <option value="cancel">❌ Dibatal</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>ID</th><th>Pelanggan</th><th>Item</th><th>Total</th><th>Status</th><th>Waktu</th><th>Detail</th></tr></thead>
+          <tbody id="ordersTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= BANNERS ======= -->
+  <div id="sec-banners" class="admin-section" style="display:none">
+    <div class="section-card">
+      <div class="section-card-header">
+        <h2>📢 Banner & Promo</h2>
+        <button class="btn btn-primary btn-sm" onclick="openBannerModal()">➕ Tambah Banner</button>
+      </div>
+      <div class="section-card-body" id="bannersList"></div>
+    </div>
+    <div class="alert alert-info">ℹ️ Banner aktif akan ditampilkan sebagai marquee (teks berjalan) di halaman utama toko.</div>
+  </div>
+
+  <!-- ======= SETTINGS ======= -->
+  <div id="sec-settings" class="admin-section" style="display:none">
+    <div class="section-card">
+      <div class="section-card-header"><h2>🏪 Informasi Toko</h2></div>
+      <div class="section-card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Nama Toko *</label>
+            <input class="form-control" id="sStoreName" type="text" placeholder="JastipKu Desa"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nama Pemilik</label>
+            <input class="form-control" id="sOwnerName" type="text"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">No. WhatsApp (tanpa +) *</label>
+            <input class="form-control" id="sWhatsapp" type="tel" placeholder="6281234567890"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Logo Emoji</label>
+            <input class="form-control" id="sLogoEmoji" type="text" maxlength="4" placeholder="🛵"/>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Alamat Toko</label>
+            <input class="form-control" id="sAddress" type="text" placeholder="Jl. Desa Makmur..."/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header"><h2>⏰ Jam & Tarif</h2></div>
+      <div class="section-card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Jam Buka</label>
+            <input class="form-control" id="sOpenTime" type="time"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Jam Tutup</label>
+            <input class="form-control" id="sCloseTime" type="time"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ongkos Kirim (Rp)</label>
+            <input class="form-control" id="sDelivery" type="number" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum Order (Rp)</label>
+            <input class="form-control" id="sMinOrder" type="number" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status Toko</label>
+            <div class="toggle-wrap" onclick="toggleField('sIsOpen','sIsOpenVal')">
+              <div class="toggle on" id="sIsOpen"></div>
+              <span class="toggle-label">Toko Buka</span>
+            </div>
+            <input type="hidden" id="sIsOpenVal" value="1"/>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Greeting / Sapaan</label>
+            <input class="form-control" id="sGreeting" type="text"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header"><h2>🎨 Tampilan Warna</h2></div>
+      <div class="section-card-body">
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Warna Utama (Primary)</label>
+          <div class="color-row" id="primaryColors"></div>
+          <input type="hidden" id="sPrimary" value="#e8501a"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Warna Aksen (Accent)</label>
+          <div class="color-row" id="accentColors"></div>
+          <input type="hidden" id="sAccent" value="#f5a623"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-header"><h2>🔐 Keamanan</h2></div>
+      <div class="section-card-body">
+        <div class="form-group" style="max-width:280px">
+          <label class="form-label">Password Admin</label>
+          <input class="form-control" id="sAdminPass" type="text" placeholder="admin123"/>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;margin-bottom:18px" onclick="saveSettings()">
+      💾 Simpan Semua Pengaturan
+    </button>
+
+    <div class="section-card" style="border-color:#f8d7da">
+      <div class="section-card-header"><h2 style="color:var(--danger)">⚠️ Reset Data</h2></div>
+      <div class="section-card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="resetData('products')">Reset Produk</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetData('categories')">Reset Kategori</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetData('orders')">Hapus Pesanan</button>
+        <button class="btn btn-danger btn-sm" onclick="resetData('all')">🔴 Reset Semua Data</button>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /admin-content -->
+</main>
+</div><!-- /admin-wrap -->
+
+<!-- ======= MODAL: PRODUCT ======= -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="productModalTitle">Tambah Produk</h3>
+      <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Nama Produk *</label>
+          <input class="form-control" id="pName" type="text" placeholder="Nasi Goreng Spesial"/>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Deskripsi</label>
+          <textarea class="form-control" id="pDesc" placeholder="Deskripsi singkat produk..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Harga (Rp) *</label>
+          <input class="form-control" id="pPrice" type="number" min="0" placeholder="15000"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori *</label>
+          <select class="form-control" id="pCat"></select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Emoji Produk</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span id="pEmoji" style="font-size:2.5rem">🍱</span>
+            <span style="font-size:0.8rem;color:var(--text3)">Pilih dari daftar di bawah</span>
+          </div>
+          <input type="hidden" id="pEmojiVal" value="🍱"/>
+          <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status Produk</label>
+          <div class="toggle-wrap" onclick="toggleField('pActive','pActiveVal')">
+            <div class="toggle on" id="pActive"></div>
+            <span class="toggle-label">Aktif / Tampil</span>
+          </div>
+          <input type="hidden" id="pActiveVal" value="1"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ketersediaan Stok</label>
+          <div class="toggle-wrap" onclick="toggleField('pStock','pStockVal')">
+            <div class="toggle on" id="pStock"></div>
+            <span class="toggle-label">Stok Tersedia</span>
+          </div>
+          <input type="hidden" id="pStockVal" value="1"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Batal</button>
+      <button class="btn btn-primary" onclick="saveProduct()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MODAL: CATEGORY ======= -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <h3 id="catModalTitle">Tambah Kategori</h3>
+      <button class="modal-close" onclick="closeModal('catModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Nama Kategori *</label>
+        <input class="form-control" id="cName" type="text" placeholder="Makanan"/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Emoji</label>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span id="cEmoji" style="font-size:2rem">🍱</span>
+        </div>
+        <input type="hidden" id="cEmojiVal" value="🍱"/>
+        <div class="emoji-grid" id="catEmojiGrid"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="toggle-wrap" onclick="toggleField('cActive','cActiveVal')">
+          <div class="toggle on" id="cActive"></div>
+          <span class="toggle-label">Aktif / Tampil</span>
+        </div>
+        <input type="hidden" id="cActiveVal" value="1"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('catModal')">Batal</button>
+      <button class="btn btn-primary" onclick="saveCategory()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======= MODAL: BANNER ======= -->
+<div class="modal-overlay" id="bannerModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <h3 id="bannerModalTitle">Tambah Banner</h3>
+      <button class="modal-close" onclick="closeModal('bannerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Teks Banner *</label>
+        <input class="form-control" id="bText" type="text" placeholder="🔥 Promo spesial hari ini!"/>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label class="form-label">Warna Teks</label>
+        <div class="color-row" id="colorSwatches"></div>
+        <input type="hidden" id="bColorVal" value="#e8501a"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="toggle-wrap" onclick="toggleField('bActive','bActiveVal')">
+          <div class="toggle on" id="bActive"></div>
+          <span class="toggle-label">Aktif / Tampil</span>
+        </div>
+        <input type="hidden" id="bActiveVal" value="1"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('bannerModal')">Batal</button>
+      <button class="btn btn-primary" onclick="saveBanner()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN TOAST -->
+<div class="admin-toast" id="adminToast"></div>
+
+<script src="/js/data.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

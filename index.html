@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#e8501a"/>
+  <meta name="description" content="Jastip makanan & minuman untuk wilayah desa"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="JastipKu"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <title>JastipKu</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="store-name" id="storeName">🛵 JastipKu</span>
+    <span class="store-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusTxt">Buka Sekarang</span>
+    </span>
+  </div>
+  <div class="topbar-right">
+    <button class="cart-btn" onclick="openCart()">
+      🛒 <span>Keranjang</span>
+      <span class="cart-count" id="cartCount" style="display:none">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- BANNER MARQUEE -->
+<div class="banner-track">
+  <div class="banner-inner" id="bannerInner"></div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="searchInput" placeholder="Cari makanan atau minuman..." autocomplete="off"/>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="section-title">Kategori</div>
+<div class="cats-scroll" id="catsWrap"></div>
+
+<!-- PRODUCTS -->
+<div class="section-title">Menu Tersedia</div>
+<div class="products-grid" id="productsGrid"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="scrollTo(0,0)">
+    <span class="nav-icon">🏠</span>Menu
+  </button>
+  <button class="nav-item" onclick="openCart()">
+    <span class="nav-icon">🛒</span>Keranjang
+  </button>
+  <button class="nav-item" onclick="openOrders()">
+    <span class="nav-icon">📦</span>Pesanan
+  </button>
+  <button class="nav-item" onclick="openPage('infoPage')">
+    <span class="nav-icon">ℹ️</span>Info
+  </button>
+</nav>
+
+<!-- ========== CART PAGE ========== -->
+<div class="page-overlay" id="cartPage">
+  <div class="page-header">
+    <button class="back-btn" onclick="closePage('cartPage')">←</button>
+    <span class="page-title">🛒 Keranjang</span>
+  </div>
+  <div class="cart-empty" id="cartEmpty">
+    <span class="big-emoji">🛒</span>
+    <span>Keranjang masih kosong</span>
+    <button class="btn-primary" style="width:auto;padding:10px 24px;margin-top:8px" onclick="closePage('cartPage')">Lihat Menu</button>
+  </div>
+  <div class="cart-list" id="cartList"></div>
+  <div class="cart-summary" id="cartSummary" style="display:none"></div>
+  <div class="checkout-section" id="checkoutSection" style="display:none">
+    <label class="input-label">👤 Nama Pemesan *</label>
+    <input class="input-field" id="custName" type="text" placeholder="Nama lengkap kamu"/>
+    <label class="input-label">📍 Alamat Pengiriman *</label>
+    <textarea class="input-field" id="custAddress" placeholder="Tulis alamat lengkap & patokan rumah"></textarea>
+    <label class="input-label">📝 Catatan (opsional)</label>
+    <input class="input-field" id="custNote" type="text" placeholder="Contoh: pedasnya sedang, tanpa kol"/>
+    <button class="btn-primary btn-wa" onclick="submitOrder()">
+      📲 Kirim Pesanan via WhatsApp
+    </button>
+  </div>
+</div>
+
+<!-- ========== ORDERS PAGE ========== -->
+<div class="page-overlay" id="ordersPage">
+  <div class="page-header">
+    <button class="back-btn" onclick="closePage('ordersPage')">←</button>
+    <span class="page-title">📦 Riwayat Pesanan</span>
+  </div>
+  <div class="orders-list" id="ordersList"></div>
+</div>
+
+<!-- ========== INFO PAGE ========== -->
+<div class="page-overlay" id="infoPage">
+  <div class="page-header">
+    <button class="back-btn" onclick="closePage('infoPage')">←</button>
+    <span class="page-title">ℹ️ Informasi Toko</span>
+  </div>
+  <div class="info-section">
+    <div class="info-card">
+      <h3>🏪 Tentang Toko</h3>
+      <div class="info-row"><span class="info-icon">🏷️</span><span id="infoName">JastipKu</span></div>
+      <div class="info-row"><span class="info-icon">👤</span><span id="infoOwner">Admin</span></div>
+      <div class="info-row"><span class="info-icon">📍</span><span id="infoAddr">-</span></div>
+    </div>
+    <div class="info-card">
+      <h3>⏰ Jam Operasional & Pengiriman</h3>
+      <div class="info-row"><span class="info-icon">🕐</span><span id="infoHour">07:00 – 21:00</span></div>
+      <div class="info-row"><span class="info-icon">📱</span><span id="infoWA">-</span></div>
+      <div class="info-row"><span class="info-icon">💰</span>Min. order: <strong id="infoMin">Rp 15.000</strong></div>
+      <div class="info-row"><span class="info-icon">🛵</span>Ongkir: <strong id="infoDelivery">Rp 3.000</strong></div>
+    </div>
+    <div class="info-card">
+      <h3>📋 Cara Pemesanan</h3>
+      <div class="info-row"><span class="info-icon">1️⃣</span><span>Pilih menu yang diinginkan</span></div>
+      <div class="info-row"><span class="info-icon">2️⃣</span><span>Masukkan ke keranjang</span></div>
+      <div class="info-row"><span class="info-icon">3️⃣</span><span>Isi nama & alamat pengiriman</span></div>
+      <div class="info-row"><span class="info-icon">4️⃣</span><span>Kirim via WhatsApp & tunggu konfirmasi</span></div>
+    </div>
+    <a href="/admin/" style="text-decoration:none">
+      <div class="info-card" style="text-align:center;cursor:pointer;border-color:var(--primary)">
+        <span style="font-size:1.5rem">⚙️</span>
+        <h3 style="color:var(--primary);margin-top:4px">Panel Admin</h3>
+        <p style="font-size:0.8rem;color:var(--text3)">Kelola toko, menu, dan pesanan</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- PWA INSTALL BAR -->
+<div class="install-bar" id="installBar" style="display:none">
+  <span style="font-size:1.6rem">📲</span>
+  <p>Install JastipKu di HP kamu untuk akses lebih mudah!</p>
+  <div class="install-bar-btns">
+    <button class="btn-install" onclick="installApp()">Install</button>
+    <button class="btn-dismiss" onclick="dismissInstall()">Nanti</button>
+  </div>
+</div>
+
+<script src="/js/data.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
