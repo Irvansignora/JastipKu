@@ -268,3 +268,4 @@ select.form-control { appearance:none; background-image:url("data:image/svg+xml,
 }
 .emoji-opt:hover { background:var(--bg); }
 .emoji-opt.selected { background:var(--primary-lt); }
+
