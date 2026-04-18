@@ -1,22 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap');
 
-/* ---- DESKTOP BLOCKER ---- */
-@media (min-width: 600px) {
-  body > *:not(#desktopBlock) { display: none !important; }
-  #desktopBlock { display: flex !important; }
-}
-#desktopBlock {
-  display: none;
-  position: fixed; inset: 0; z-index: 9999;
-  background: #1a0a00;
-  flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; text-align: center; padding: 32px;
-}
-#desktopBlock .db-emoji { font-size: 4rem; }
-#desktopBlock h2 { font-family: 'Playfair Display', serif; color: #fff; font-size: 1.5rem; }
-#desktopBlock p  { color: rgba(255,255,255,0.6); font-family: 'Nunito', sans-serif; font-size: 0.95rem; line-height: 1.6; max-width: 320px; }
-#desktopBlock .qr-hint { background: rgba(255,255,255,0.08); border-radius: 14px; padding: 14px 24px; color: rgba(255,255,255,0.5); font-family: 'Nunito', sans-serif; font-size: 0.8rem; }
-
 :root {
   --primary:    #e8501a;
   --primary-dk: #c43d0e;
@@ -248,11 +231,12 @@ body {
 .page-overlay {
   position:fixed; inset:0; z-index:200;
   background:var(--bg);
-  transform:translateX(100%); transition:transform 0.3s ease;
+  transform:translateX(100%); transition:transform 0.3s ease, visibility 0s 0.3s;
   overflow-y:auto; max-width:480px; left:50%; margin-left:-240px;
+  visibility:hidden;
 }
 @media (max-width:480px) { .page-overlay { left:0; margin-left:0; } }
-.page-overlay.open { transform:translateX(0); }
+.page-overlay.open { transform:translateX(0); visibility:visible; transition:transform 0.3s ease, visibility 0s 0s; }
 
 .page-header {
   position:sticky; top:0; z-index:10;
