@@ -1,6 +1,6 @@
-// ===========================================================
+// ============================================================
 // JastipKu - Admin Panel JS
-// ===========================================================
+// ============================================================
 
 let currentSection = 'dashboard';
 const ADMIN_PASS_KEY = 'jku_admin_auth';
@@ -122,8 +122,11 @@ function renderProducts() {
   const tbody = document.getElementById('productsTbody');
   tbody.innerHTML = products.map(p => {
     const cat = categories.find(c => c.id === p.categoryId);
+    const thumb = p.imageUrl
+      ? `<img src="${CLOUDINARY.mini(p.imageUrl, 80)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block" onerror="this.outerHTML='<span style=font-size:1.8rem>${p.emoji}</span>'">`
+      : `<span style="font-size:1.8rem">${p.emoji}</span>`;
     return `<tr>
-      <td style="font-size:1.5rem">${p.emoji}</td>
+      <td>${thumb}</td>
       <td><strong>${p.name}</strong><br><span style="font-size:0.75rem;color:var(--text3)">${p.desc.substring(0,40)}...</span></td>
       <td>${cat ? cat.emoji+' '+cat.name : '-'}</td>
       <td><strong>${DB.formatRupiah(p.price)}</strong></td>
@@ -145,7 +148,7 @@ function openProductModal(id = null) {
   const modal = document.getElementById('productModal');
   document.getElementById('productModalTitle').textContent = id ? '✏️ Edit Produk' : '➕ Tambah Produk';
 
-  let p = { id:'', categoryId:'', name:'', desc:'', price:'', emoji:'🍱', active:true, stock:true };
+  let p = { id:'', categoryId:'', name:'', desc:'', price:'', emoji:'🍱', imageUrl:'', active:true, stock:true };
   if (id) { const found = DB.getProducts().find(x => x.id === id); if (found) p = { ...found }; }
 
   document.getElementById('pName').value = p.name;
@@ -156,6 +159,8 @@ function openProductModal(id = null) {
   ).join('');
   document.getElementById('pEmoji').textContent = p.emoji;
   document.getElementById('pEmojiVal').value = p.emoji;
+  document.getElementById('pImageUrl').value = p.imageUrl || '';
+  renderImagePreview(p.imageUrl);
   document.getElementById('pActive').className = 'toggle' + (p.active?' on':'');
   document.getElementById('pActiveVal').value = p.active ? '1' : '0';
   document.getElementById('pStock').className = 'toggle' + (p.stock?' on':'');
@@ -167,6 +172,65 @@ function openProductModal(id = null) {
   ).join('');
 
   modal.classList.add('open');
+}
+
+function renderImagePreview(url) {
+  const wrap = document.getElementById('imagePreviewWrap');
+  if (url) {
+    const thumb = CLOUDINARY.thumb(url, 400);
+    wrap.innerHTML = `<div style="position:relative;display:inline-block">
+      <img src="${thumb}" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block" onerror="this.parentNode.innerHTML='<span style=color:var(--text3)>Gagal load gambar</span>'"/>
+      <button onclick="removeProductImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.85rem">✕</button>
+    </div>`;
+  } else {
+    wrap.innerHTML = `<div style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--text3);font-size:0.82rem">
+      <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
+      Belum ada foto
+    </div>`;
+  }
+}
+
+function removeProductImage() {
+  document.getElementById('pImageUrl').value = '';
+  renderImagePreview('');
+  showToast('🗑️ Foto dihapus');
+}
+
+async function uploadProductImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Validate
+  if (!file.type.startsWith('image/')) { showToast('❗ File harus berupa gambar!'); return; }
+  if (file.size > 5 * 1024 * 1024) { showToast('❗ Ukuran gambar maksimal 5MB!'); return; }
+
+  const btn = document.getElementById('uploadBtn');
+  btn.textContent = '⏳ Mengupload...';
+  btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY.uploadPreset);
+    formData.append('folder', 'jastipku/products');
+
+    const res = await fetch(CLOUDINARY.baseUrl(), { method:'POST', body: formData });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'Upload gagal');
+    }
+    const data = await res.json();
+    document.getElementById('pImageUrl').value = data.secure_url;
+    renderImagePreview(data.secure_url);
+    showToast('✅ Foto berhasil diupload!');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Upload gagal: ' + e.message + '. Cek upload preset Cloudinary (harus unsigned).');
+  } finally {
+    btn.textContent = '📷 Upload Foto';
+    btn.disabled = false;
+    input.value = '';
+  }
 }
 
 function selectEmoji(e) {
@@ -189,6 +253,7 @@ function saveProduct() {
   const price   = parseInt(document.getElementById('pPrice').value);
   const catId   = document.getElementById('pCat').value;
   const emoji   = document.getElementById('pEmojiVal').value;
+  const imageUrl= document.getElementById('pImageUrl').value.trim();
   const active  = document.getElementById('pActiveVal').value === '1';
   const stock   = document.getElementById('pStockVal').value === '1';
 
@@ -197,9 +262,9 @@ function saveProduct() {
   let products = DB.getProducts();
   if (editingProductId) {
     const idx = products.findIndex(p => p.id === editingProductId);
-    if (idx >= 0) products[idx] = { ...products[idx], name, desc, price, categoryId:catId, emoji, active, stock };
+    if (idx >= 0) products[idx] = { ...products[idx], name, desc, price, categoryId:catId, emoji, imageUrl, active, stock };
   } else {
-    products.push({ id: DB.genId(), categoryId:catId, name, desc, price, emoji, active, stock });
+    products.push({ id: DB.genId(), categoryId:catId, name, desc, price, emoji, imageUrl, active, stock });
   }
   DB.saveProducts(products);
   closeModal('productModal');
