@@ -154,25 +154,6 @@ function renderProducts() {
   }).join('');
 }
 
-// ---- SECRET ADMIN TAP ----
-let secretTaps = 0, secretTimer = null;
-function secretTap() {
-  secretTaps++;
-  const hint = document.getElementById('secretHint');
-  const remain = 5 - secretTaps;
-  if (secretTaps < 5) {
-    hint.style.color = 'var(--text3)';
-    hint.textContent = remain > 0 ? `${remain}x lagi...` : '';
-    clearTimeout(secretTimer);
-    secretTimer = setTimeout(() => { secretTaps = 0; hint.style.color = 'transparent'; }, 2000);
-  } else {
-    secretTaps = 0;
-    clearTimeout(secretTimer);
-    hint.style.color = 'transparent';
-    window.location.href = '/admin/';
-  }
-}
-
 // ---- CART ----
 function addToCart(id) {
   const products = DB.getProducts();
