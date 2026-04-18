@@ -287,23 +287,24 @@ async function submitOrder() {
     DB.clearCart();
     updateCartBadge();
 
-    const itemsText = cart.map(i => `  • ${i.name} x${i.qty} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n');
+    const itemsText = cart.map(i => "  • " + i.name + " x" + i.qty + " = " + DB.formatRupiah(i.price*i.qty)).join('\n');
     const waMsg = encodeURIComponent(
-*PESANAN BARU - ${s.storeName}*
-━━━━━━━━━━━━━
-Order ID: ${order.id}
-Nama: ${name}
-Alamat: ${address}
-${note ? '📝 Catatan: ' + note : ''}
-━━━━━━━━━━━━━
-*Detail Pesanan:*
-${itemsText}
-━━━━━━━━━━━━━
-Subtotal: ${DB.formatRupiah(subtotal)}
-Ongkir: ${DB.formatRupiah(s.deliveryFee||3000)}
-*TOTAL: ${DB.formatRupiah(total)}*
-━━━━━━━━━━━━━
-Terima kasih sudah memesan! 🙏`);
+      "🛵 *PESANAN BARU - " + s.storeName + "*\n" +
+      "━━━━━━━━━━━━━\n" +
+      "📋 Order ID: " + order.id + "\n" +
+      "👤 Nama: " + name + "\n" +
+      "📍 Alamat: " + address + "\n" +
+      (note ? "📝 Catatan: " + note + "\n" : "") +
+      "━━━━━━━━━━━━━\n" +
+      "*Detail Pesanan:*\n" +
+      itemsText + "\n" +
+      "━━━━━━━━━━━━━\n" +
+      "Subtotal: " + DB.formatRupiah(subtotal) + "\n" +
+      "Ongkir: " + DB.formatRupiah(s.deliveryFee||3000) + "\n" +
+      "*TOTAL: " + DB.formatRupiah(total) + "*\n" +
+      "━━━━━━━━━━━━━\n" +
+      "Terima kasih sudah memesan! 🙏"
+    );
 
     window.open(`https://wa.me/${s.whatsapp}?text=${waMsg}`, '_blank');
     closePage('cartPage');
