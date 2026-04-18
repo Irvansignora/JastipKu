@@ -157,7 +157,6 @@ function openProductModal(id = null) {
   document.getElementById('pCat').innerHTML = categories.map(c =>
     `<option value="${c.id}" ${c.id===p.categoryId?'selected':''}>${c.emoji} ${c.name}</option>`
   ).join('');
-  document.getElementById('pEmoji') && (document.getElementById('pEmoji').textContent = p.emoji);
   document.getElementById('pEmojiVal').value = p.emoji || '🍱';
   document.getElementById('pImageUrl').value = p.imageUrl || '';
   renderImagePreview(p.imageUrl);
@@ -165,10 +164,6 @@ function openProductModal(id = null) {
   document.getElementById('pActiveVal').value = p.active ? '1' : '0';
   document.getElementById('pStock').className = 'toggle' + (p.stock?' on':'');
   document.getElementById('pStockVal').value = p.stock ? '1' : '0';
-
-  // Emoji grid — removed, no longer in form
-  const emojiGrid = document.getElementById('emojiGrid');
-  if (emojiGrid) emojiGrid.innerHTML = '';
 
   modal.classList.add('open');
 }
@@ -230,12 +225,6 @@ async function uploadProductImage(input) {
     btn.disabled = false;
     input.value = '';
   }
-}
-
-function selectEmoji(e) {
-  document.getElementById('pEmoji').textContent = e;
-  document.getElementById('pEmojiVal').value = e;
-  document.querySelectorAll('.emoji-opt').forEach(el => el.classList.toggle('selected', el.textContent === e));
 }
 
 function toggleField(toggleId, valId) {
