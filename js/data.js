@@ -77,7 +77,9 @@ const DB = {
     const { doc, getDoc, setDoc, collection, getDocs } = this._fs;
     const db = this._db;
     const sSnap = await getDoc(doc(db, 'config', 'settings'));
-    if (!sSnap.exists()) await setDoc(doc(db, 'config', 'settings'), DEFAULTS.settings);
+    if (sSnap.exists()) return; // Mencegah loading lambat dengan memotong fetching jika db tidak kosong
+
+    await setDoc(doc(db, 'config', 'settings'), DEFAULTS.settings);
     const cSnap = await getDocs(collection(db, 'categories'));
     if (cSnap.empty) for (const c of DEFAULTS.categories) await setDoc(doc(db, 'categories', c.id), c);
     const pSnap = await getDocs(collection(db, 'products'));
