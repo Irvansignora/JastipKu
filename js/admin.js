@@ -408,21 +408,17 @@ function copyInvoiceText() {
 
 async function printInvoice() {
   if (!currentOrderForInvoice) return;
-  
-  // Buka window terlebih dahulu secara sinkron untuk menghindari pemblokiran Popup Blocker oleh browser
-  const printWindow = window.open('', '_blank', 'width=450,height=650');
-  if(!printWindow) {
-    showToast('❌ Gagal membuka window cetak (Buka izinkan Popup di browser)');
-    return;
-  }
-  printWindow.document.write('<body style="font-family:sans-serif;text-align:center;padding:50px;">⏳ Memuat Invoice...</body>');
-
   const o = currentOrderForInvoice;
   const s = await DB.getSettings();
   const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
   
-  printWindow.document.open();
-  printWindow.document.write(`
+  // Menggunakan iframe tersembunyi jauh lebih stabil di HP (Android/iOS) dan tidak diblokir Popup Blocker
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(`
     <html>
     <head>
       <title>Invoice #${o.id}</title>
@@ -441,7 +437,7 @@ async function printInvoice() {
         }
       </style>
     </head>
-    <body onload="window.print(); window.close();">
+    <body>
       <div class="center">
         <h2>${s.logoEmoji} ${s.storeName}</h2>
         <div>${s.address}</div>
@@ -484,7 +480,17 @@ async function printInvoice() {
     </body>
     </html>
   `);
-  printWindow.document.close();
+  iframe.contentWindow.document.close();
+
+  // Berikan jeda sedikit agar DOM di iframe dirender sempurana sebelum memanggil Print Spooler OS
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    // Hapus iframe setelah dialog print muncul/selesai
+    setTimeout(() => {
+      if (document.body.contains(iframe)) document.body.removeChild(iframe);
+    }, 5000);
+  }, 500);
 }
 
 // ---- BANNERS ----
