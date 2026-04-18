@@ -423,17 +423,20 @@ async function printInvoice() {
     <head>
       <title>Invoice #${o.id}</title>
       <style>
-        body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; font-size: 14px; line-height: 1.5; max-width: 400px; margin: 0 auto; }
+        /* Desain spesifik untuk printer thermal (58mm - 80mm) */
+        body { font-family: 'Courier New', Courier, monospace; padding: 0; color: #000; font-size: 12px; line-height: 1.4; width: 300px; margin: 0 auto; }
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        .divider { border-top: 1px dashed #000; margin: 10px 0; }
+        .divider { border-top: 1px dashed #000; margin: 8px 0; }
         .row { display: flex; justify-content: space-between; }
-        h2 { margin: 0 0 10px 0; font-size: 20px; }
+        .row span:first-child { flex-shrink: 0; margin-right: 10px; }
+        .row span:last-child { text-align: right; word-break: break-all; }
+        h2 { margin: 0 0 5px 0; font-size: 16px; }
         .item-name { margin-bottom: 2px; }
-        .item-detail { display: flex; justify-content: space-between; padding-left: 10px; font-size: 0.9em; }
+        .item-detail { display: flex; justify-content: space-between; padding-left: 10px; font-size: 0.95em; }
         @media print {
-          @page { margin: 0; }
-          body { padding: 10px; max-width: 100%; width: 100%; }
+          @page { margin: 0.5cm; }
+          body { width: 75mm; margin: 0 auto; } /* Menjaga ukuran tetap proporsional seperti thermal meski dicetak di A4 */
         }
       </style>
     </head>
