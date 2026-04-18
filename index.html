@@ -131,13 +131,11 @@
       <div class="info-row"><span class="info-icon">3️⃣</span><span>Isi nama & alamat pengiriman</span></div>
       <div class="info-row"><span class="info-icon">4️⃣</span><span>Kirim via WhatsApp & tunggu konfirmasi</span></div>
     </div>
-    <a href="/admin/" style="text-decoration:none">
-      <div class="info-card" style="text-align:center;cursor:pointer;border-color:var(--primary)">
-        <span style="font-size:1.5rem">⚙️</span>
-        <h3 style="color:var(--primary);margin-top:4px">Panel Admin</h3>
-        <p style="font-size:0.8rem;color:var(--text3)">Kelola toko, menu, dan pesanan</p>
-      </div>
-    </a>
+    <!-- Secret admin access: tap logo 5x -->
+    <div class="info-card" style="text-align:center;user-select:none" onclick="secretTap()">
+      <p style="font-size:0.78rem;color:var(--text3)">v1.2 · JastipKu © 2025</p>
+      <p id="secretHint" style="font-size:0.7rem;color:transparent;margin-top:4px;transition:color 0.3s">·</p>
+    </div>
   </div>
 </div>
 
@@ -147,7 +145,7 @@
 <!-- PWA INSTALL BAR -->
 <div class="install-bar" id="installBar" style="display:none">
   <span style="font-size:1.6rem">📲</span>
-  <p>Install JastipKu di HP kamu untuk akses lebih mudah dan cepat!</p>
+  <p>Install JastipKu di HP kamu untuk akses lebih mudah!</p>
   <div class="install-bar-btns">
     <button class="btn-install" onclick="installApp()">Install</button>
     <button class="btn-dismiss" onclick="dismissInstall()">Nanti</button>
