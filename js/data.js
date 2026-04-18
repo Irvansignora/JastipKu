@@ -1,6 +1,23 @@
-// ===========================================================
+// ============================================================
 // JastipKu - Data Layer (localStorage-based, no backend needed)
-// ===========================================================
+// ============================================================
+
+const CLOUDINARY = {
+  cloudName: 'dyhvx9wit',
+  uploadPreset: 'jastipku_unsigned',
+  baseUrl() { return `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`; },
+  // WebP + auto quality + resize = paling hemat bandwidth
+  thumb(url, w=400) {
+    if (!url) return '';
+    return url.replace('/upload/', `/upload/w_${w},h_${w},c_fill,q_auto:eco,f_webp/`);
+  },
+  // Versi lebih kecil untuk thumbnail list/tabel admin
+  mini(url, w=80) {
+    if (!url) return '';
+    return url.replace('/upload/', `/upload/w_${w},h_${w},c_fill,q_auto:low,f_webp/`);
+  }
+};
+window.CLOUDINARY = CLOUDINARY;
 
 const DB = {
   // ---- Keys ----
@@ -54,15 +71,15 @@ const DB = {
   // ---- PRODUCTS ----
   getProducts() {
     return this.get(this.KEYS.PRODUCTS) || [
-      { id:'p1', categoryId:'cat1', name:'Nasi Goreng Spesial', desc:'Nasi goreng dengan telur, ayam, dan sayuran segar', price:15000, emoji:'🍳', active:true, stock:true },
-      { id:'p2', categoryId:'cat1', name:'Mie Ayam Bakso',      desc:'Mie ayam dengan bakso kenyal dan kuah gurih',         price:12000, emoji:'🍜', active:true, stock:true },
-      { id:'p3', categoryId:'cat1', name:'Ayam Geprek Sambal',  desc:'Ayam crispy geprek dengan sambal bawang pedas',        price:18000, emoji:'🍗', active:true, stock:true },
-      { id:'p4', categoryId:'cat2', name:'Es Teh Manis',        desc:'Teh manis segar dengan es batu',                       price:5000,  emoji:'🧋', active:true, stock:true },
-      { id:'p5', categoryId:'cat2', name:'Es Jeruk',            desc:'Jeruk peras segar dengan es',                          price:7000,  emoji:'🍊', active:true, stock:true },
-      { id:'p6', categoryId:'cat2', name:'Kopi Susu Gula Aren', desc:'Kopi susu dengan gula aren asli',                      price:10000, emoji:'☕', active:true, stock:true },
-      { id:'p7', categoryId:'cat3', name:'Cireng Isi',          desc:'Cireng isi ayam dengan saus kacang',                   price:8000,  emoji:'🥟', active:true, stock:true },
-      { id:'p8', categoryId:'cat3', name:'Pisang Goreng Keju',  desc:'Pisang goreng crispy dengan topping keju leleh',       price:10000, emoji:'🍌', active:true, stock:true },
-      { id:'p9', categoryId:'cat4', name:'Dimsum Frozen',       desc:'Paket dimsum frozen isi 10 pcs siap kukus',            price:20000, emoji:'🥡', active:true, stock:true },
+      { id:'p1', categoryId:'cat1', name:'Nasi Goreng Spesial', desc:'Nasi goreng dengan telur, ayam, dan sayuran segar', price:15000, emoji:'🍳', imageUrl:'', active:true, stock:true },
+      { id:'p2', categoryId:'cat1', name:'Mie Ayam Bakso',      desc:'Mie ayam dengan bakso kenyal dan kuah gurih',         price:12000, emoji:'🍜', imageUrl:'', active:true, stock:true },
+      { id:'p3', categoryId:'cat1', name:'Ayam Geprek Sambal',  desc:'Ayam crispy geprek dengan sambal bawang pedas',        price:18000, emoji:'🍗', imageUrl:'', active:true, stock:true },
+      { id:'p4', categoryId:'cat2', name:'Es Teh Manis',        desc:'Teh manis segar dengan es batu',                       price:5000,  emoji:'🧋', imageUrl:'', active:true, stock:true },
+      { id:'p5', categoryId:'cat2', name:'Es Jeruk',            desc:'Jeruk peras segar dengan es',                          price:7000,  emoji:'🍊', imageUrl:'', active:true, stock:true },
+      { id:'p6', categoryId:'cat2', name:'Kopi Susu Gula Aren', desc:'Kopi susu dengan gula aren asli',                      price:10000, emoji:'☕', imageUrl:'', active:true, stock:true },
+      { id:'p7', categoryId:'cat3', name:'Cireng Isi',          desc:'Cireng isi ayam dengan saus kacang',                   price:8000,  emoji:'🥟', imageUrl:'', active:true, stock:true },
+      { id:'p8', categoryId:'cat3', name:'Pisang Goreng Keju',  desc:'Pisang goreng crispy dengan topping keju leleh',       price:10000, emoji:'🍌', imageUrl:'', active:true, stock:true },
+      { id:'p9', categoryId:'cat4', name:'Dimsum Frozen',       desc:'Paket dimsum frozen isi 10 pcs siap kukus',            price:20000, emoji:'🥡', imageUrl:'', active:true, stock:true },
     ];
   },
   saveProducts(p) { this.set(this.KEYS.PRODUCTS, p); },
