@@ -76,16 +76,35 @@ const DB = {
   async _seedIfEmpty() {
     const { doc, getDoc, setDoc, collection, getDocs } = this._fs;
     const db = this._db;
+    
+    // Pertama, coba ambil setelan
     const sSnap = await getDoc(doc(db, 'config', 'settings'));
-    if (sSnap.exists()) return; // Mencegah loading lambat dengan memotong fetching jika db tidak kosong
-
-    await setDoc(doc(db, 'config', 'settings'), DEFAULTS.settings);
-    const cSnap = await getDocs(collection(db, 'categories'));
-    if (cSnap.empty) for (const c of DEFAULTS.categories) await setDoc(doc(db, 'categories', c.id), c);
-    const pSnap = await getDocs(collection(db, 'products'));
-    if (pSnap.empty) for (const p of DEFAULTS.products) await setDoc(doc(db, 'products', p.id), p);
-    const bSnap = await getDocs(collection(db, 'banners'));
-    if (bSnap.empty) for (const b of DEFAULTS.banners) await setDoc(doc(db, 'banners', b.id), b);
+    if (sSnap.exists()) return; // Database sudah aktif, tidak perlu seeding lambat lagi
+    
+    // Jika belum ada (database baru/reset), kita paralelkan SEMUA request ke Firebase
+    const promises = [];
+    promises.push(setDoc(doc(db, 'config', 'settings'), DEFAULTS.settings));
+    
+    // Ambil pengecekan secara berbarengan
+    const [cSnap, pSnap, bSnap] = await Promise.all([
+      getDocs(collection(db, 'categories')),
+      getDocs(collection(db, 'products')),
+      getDocs(collection(db, 'banners'))
+    ]);
+    
+    // Kumpulkan setiap proses penulisan yang belum ada ke dalam antrean Promise
+    if (cSnap.empty) {
+      for (const c of DEFAULTS.categories) promises.push(setDoc(doc(db, 'categories', c.id), c));
+    }
+    if (pSnap.empty) {
+      for (const p of DEFAULTS.products) promises.push(setDoc(doc(db, 'products', p.id), p));
+    }
+    if (bSnap.empty) {
+      for (const b of DEFAULTS.banners) promises.push(setDoc(doc(db, 'banners', b.id), b));
+    }
+    
+    // Eksekusi penulisan ribuan data bawaan secara PARALEL dalam satu waktu
+    await Promise.all(promises);
   },
 
   async getSettings() {
