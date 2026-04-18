@@ -371,26 +371,26 @@ async function viewOrderDetail(id) {
   const statusLabel = { pending:'⏳ Menunggu', process:'⚙️ Diproses', delivery:'🛵 Dikirim', done:'✅ Selesai', cancel:'❌ Dibatal' };
   const s = await DB.getSettings();
 
-  const text = \`==================================
- \${s.storeName.toUpperCase()}
+  const text = `==================================
+ ${s.storeName.toUpperCase()}
 ==================================
-No. Nota : \${o.id}
-Tanggal  : \${DB.formatDate(o.createdAt)}
-Status   : \${statusLabel[o.status] || o.status}
+No. Nota : ${o.id}
+Tanggal  : ${DB.formatDate(o.createdAt)}
+Status   : ${statusLabel[o.status] || o.status}
 ----------------------------------
 PELANGGAN:
-Nama   : \${o.customer.name}
-Alamat : \${o.customer.address}
-\${o.customer.note ? 'Catatan: ' + o.customer.note + '\\n' : ''}----------------------------------
+Nama   : ${o.customer.name}
+Alamat : ${o.customer.address}
+${o.customer.note ? 'Catatan: ' + o.customer.note + '\n' : ''}----------------------------------
 PESANAN:
-\${o.items.map(i => \`\${i.name}\\n  \${i.qty} x \${DB.formatRupiah(i.price)} = \${DB.formatRupiah(i.price*i.qty)}\`).join('\\n')}
+${o.items.map(i => `${i.name}\n  ${i.qty} x ${DB.formatRupiah(i.price)} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n')}
 ----------------------------------
-Subtotal : \${DB.formatRupiah(o.subtotal)}
-Ongkir   : \${DB.formatRupiah(o.deliveryFee)}
+Subtotal : ${DB.formatRupiah(o.subtotal)}
+Ongkir   : ${DB.formatRupiah(o.deliveryFee)}
 ----------------------------------
-TOTAL    : \${DB.formatRupiah(o.total)}
+TOTAL    : ${DB.formatRupiah(o.total)}
 ==================================
-Terima kasih telah berbelanja!\`;
+Terima kasih telah berbelanja!`;
 
   document.getElementById('invoiceContent').textContent = text;
   document.getElementById('currentOrderId').value = o.id;
@@ -418,10 +418,10 @@ async function printInvoice() {
     return;
   }
   
-  printWindow.document.write(\`
+  printWindow.document.write(`
     <html>
     <head>
-      <title>Invoice #\${o.id}</title>
+      <title>Invoice #${o.id}</title>
       <style>
         body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; font-size: 14px; line-height: 1.5; max-width: 400px; margin: 0 auto; }
         .center { text-align: center; }
@@ -439,47 +439,47 @@ async function printInvoice() {
     </head>
     <body onload="window.print(); window.close();">
       <div class="center">
-        <h2>\${s.logoEmoji} \${s.storeName}</h2>
-        <div>\${s.address}</div>
-        <div>WA: +\${s.whatsapp}</div>
+        <h2>${s.logoEmoji} ${s.storeName}</h2>
+        <div>${s.address}</div>
+        <div>WA: +${s.whatsapp}</div>
       </div>
       <div class="divider"></div>
       <div>
-        <div class="row"><span>Nota:</span><span class="bold">\${o.id}</span></div>
-        <div class="row"><span>Tgl:</span><span>\${DB.formatDate(o.createdAt)}</span></div>
-        <div class="row"><span>Status:</span><span>\${statusLabel[o.status]||o.status}</span></div>
+        <div class="row"><span>Nota:</span><span class="bold">${o.id}</span></div>
+        <div class="row"><span>Tgl:</span><span>${DB.formatDate(o.createdAt)}</span></div>
+        <div class="row"><span>Status:</span><span>${statusLabel[o.status]||o.status}</span></div>
       </div>
       <div class="divider"></div>
       <div>
-        <div class="bold">Yth. \${o.customer.name}</div>
-        <div>\${o.customer.address}</div>
-        \${o.customer.note ? \`<div><i>Catatan: \${o.customer.note}</i></div>\` : ''}
+        <div class="bold">Yth. ${o.customer.name}</div>
+        <div>${o.customer.address}</div>
+        ${o.customer.note ? `<div><i>Catatan: ${o.customer.note}</i></div>` : ''}
       </div>
       <div class="divider"></div>
       <div>
-        \${o.items.map(i => \`
+        ${o.items.map(i => `
           <div class="item">
-            <div class="item-name">\${i.emoji} \${i.name}</div>
+            <div class="item-name">${i.emoji} ${i.name}</div>
             <div class="item-detail">
-              <span>\${i.qty} x \${DB.formatRupiah(i.price)}</span>
-              <span>\${DB.formatRupiah(i.price * i.qty)}</span>
+              <span>${i.qty} x ${DB.formatRupiah(i.price)}</span>
+              <span>${DB.formatRupiah(i.price * i.qty)}</span>
             </div>
           </div>
-        \`).join('')}
+        `).join('')}
       </div>
       <div class="divider"></div>
-      <div class="row"><span>Subtotal</span><span>\${DB.formatRupiah(o.subtotal)}</span></div>
-      <div class="row"><span>Ongkir</span><span>\${DB.formatRupiah(o.deliveryFee)}</span></div>
+      <div class="row"><span>Subtotal</span><span>${DB.formatRupiah(o.subtotal)}</span></div>
+      <div class="row"><span>Ongkir</span><span>${DB.formatRupiah(o.deliveryFee)}</span></div>
       <div class="divider" style="border-top: 2px dashed #000"></div>
-      <div class="row bold" style="font-size: 16px;"><span>TOTAL</span><span>\${DB.formatRupiah(o.total)}</span></div>
+      <div class="row bold" style="font-size: 16px;"><span>TOTAL</span><span>${DB.formatRupiah(o.total)}</span></div>
       <div class="divider"></div>
       <div class="center" style="margin-top: 20px; font-size: 0.9em;">
         Terima kasih atas pesanan Anda!<br>
-        ~ \${s.storeName} ~
+        ~ ${s.storeName} ~
       </div>
     </body>
     </html>
-  \`);
+  `);
   printWindow.document.close();
 }
 
