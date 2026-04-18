@@ -284,6 +284,12 @@ async function submitOrder() {
 
   try {
     await DB.saveOrder(order);
+    
+    // Simpan history ID pesanan ke memori lokal device agar riwayatnya privat
+    const myOrders = JSON.parse(localStorage.getItem('jku_my_orders') || '[]');
+    if (!myOrders.includes(order.id)) myOrders.push(order.id);
+    localStorage.setItem('jku_my_orders', JSON.stringify(myOrders));
+
     DB.clearCart();
     updateCartBadge();
 
@@ -326,7 +332,10 @@ async function renderOrders() {
   const list = document.getElementById('ordersList');
   list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3)">⏳ Memuat...</div>`;
   try {
-    const orders = await DB.getOrders();
+    const allOrders = await DB.getOrders();
+    const myOrderIds = JSON.parse(localStorage.getItem('jku_my_orders') || '[]');
+    const orders = allOrders.filter(o => myOrderIds.includes(o.id));
+
     if (!orders.length) {
       list.innerHTML = `<div class="empty-state"><div class="es-emoji">📦</div><p>Belum ada pesanan</p></div>`;
       return;
