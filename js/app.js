@@ -1,6 +1,6 @@
-// ===========================================================
+// ============================================================
 // JastipKu - Main App JS
-// ===========================================================
+// ============================================================
 
 let currentCat = 'all';
 let searchQuery = '';
@@ -126,9 +126,13 @@ function renderProducts() {
     const cart = DB.getCart();
     const item = cart.find(c => c.id === p.id);
     const qty = item ? item.qty : 0;
+    const imgHtml = p.imageUrl
+      ? `<img src="${CLOUDINARY.thumb(p.imageUrl, 300)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;display:block" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      : '';
+    const emojiHtml = `<span style="${p.imageUrl?'display:none':''}">${p.emoji}</span>`;
     return `<div class="product-card ${!p.stock?'out-of-stock':''}" style="animation-delay:${i*0.04}s">
       <div class="product-emoji-wrap">
-        <span>${p.emoji}</span>
+        ${imgHtml}${emojiHtml}
         ${!p.stock ? '<span class="sold-out-badge">Habis</span>' : ''}
       </div>
       <div class="product-info">
@@ -148,6 +152,25 @@ function renderProducts() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ---- SECRET ADMIN TAP ----
+let secretTaps = 0, secretTimer = null;
+function secretTap() {
+  secretTaps++;
+  const hint = document.getElementById('secretHint');
+  const remain = 5 - secretTaps;
+  if (secretTaps < 5) {
+    hint.style.color = 'var(--text3)';
+    hint.textContent = remain > 0 ? `${remain}x lagi...` : '';
+    clearTimeout(secretTimer);
+    secretTimer = setTimeout(() => { secretTaps = 0; hint.style.color = 'transparent'; }, 2000);
+  } else {
+    secretTaps = 0;
+    clearTimeout(secretTimer);
+    hint.style.color = 'transparent';
+    window.location.href = '/admin/';
+  }
 }
 
 // ---- CART ----
