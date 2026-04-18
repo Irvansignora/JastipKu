@@ -289,11 +289,11 @@ async function submitOrder() {
 
     const itemsText = cart.map(i => `  • ${i.name} x${i.qty} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n');
     const waMsg = encodeURIComponent(
-`🛵 *PESANAN BARU - ${s.storeName}*
+*PESANAN BARU - ${s.storeName}*
 ━━━━━━━━━━━━━
-📋 Order ID: ${order.id}
-👤 Nama: ${name}
-📍 Alamat: ${address}
+Order ID: ${order.id}
+Nama: ${name}
+Alamat: ${address}
 ${note ? '📝 Catatan: ' + note : ''}
 ━━━━━━━━━━━━━
 *Detail Pesanan:*
