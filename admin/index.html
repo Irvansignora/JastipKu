@@ -417,6 +417,24 @@
   </div>
 </div>
 
+<!-- ======= MODAL: ORDER INVOICE ======= -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="orderModalTitle">🧾 Invoice Pesanan</h3>
+      <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="invoiceContent" style="background:var(--card);border:1px dashed var(--border);border-radius:8px;padding:20px;font-family:monospace;font-size:0.85rem;white-space:pre-wrap;line-height:1.5;"></div>
+      <input type="hidden" id="currentOrderId"/>
+    </div>
+    <div class="modal-footer" style="justify-content: space-between; display: flex; flex-wrap: wrap; gap: 10px;">
+      <button class="btn btn-ghost btn-sm" onclick="copyInvoiceText()" style="flex:1">📋 Salin Teks</button>
+      <button class="btn btn-primary btn-sm" onclick="printInvoice()" style="flex:1">🖨️ Cetak PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN TOAST -->
 <div class="admin-toast" id="adminToast"></div>
 
