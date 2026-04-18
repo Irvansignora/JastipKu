@@ -157,8 +157,8 @@ function openProductModal(id = null) {
   document.getElementById('pCat').innerHTML = categories.map(c =>
     `<option value="${c.id}" ${c.id===p.categoryId?'selected':''}>${c.emoji} ${c.name}</option>`
   ).join('');
-  document.getElementById('pEmoji').textContent = p.emoji;
-  document.getElementById('pEmojiVal').value = p.emoji;
+  document.getElementById('pEmoji') && (document.getElementById('pEmoji').textContent = p.emoji);
+  document.getElementById('pEmojiVal').value = p.emoji || '🍱';
   document.getElementById('pImageUrl').value = p.imageUrl || '';
   renderImagePreview(p.imageUrl);
   document.getElementById('pActive').className = 'toggle' + (p.active?' on':'');
@@ -166,10 +166,9 @@ function openProductModal(id = null) {
   document.getElementById('pStock').className = 'toggle' + (p.stock?' on':'');
   document.getElementById('pStockVal').value = p.stock ? '1' : '0';
 
-  // Emoji grid
-  document.getElementById('emojiGrid').innerHTML = FOOD_EMOJIS.map(e =>
-    `<div class="emoji-opt ${e===p.emoji?'selected':''}" onclick="selectEmoji('${e}')">${e}</div>`
-  ).join('');
+  // Emoji grid — removed, no longer in form
+  const emojiGrid = document.getElementById('emojiGrid');
+  if (emojiGrid) emojiGrid.innerHTML = '';
 
   modal.classList.add('open');
 }
