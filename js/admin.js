@@ -408,16 +408,20 @@ function copyInvoiceText() {
 
 async function printInvoice() {
   if (!currentOrderForInvoice) return;
+  
+  // Buka window terlebih dahulu secara sinkron untuk menghindari pemblokiran Popup Blocker oleh browser
+  const printWindow = window.open('', '_blank', 'width=450,height=650');
+  if(!printWindow) {
+    showToast('❌ Gagal membuka window cetak (Buka izinkan Popup di browser)');
+    return;
+  }
+  printWindow.document.write('<body style="font-family:sans-serif;text-align:center;padding:50px;">⏳ Memuat Invoice...</body>');
+
   const o = currentOrderForInvoice;
   const s = await DB.getSettings();
   const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
   
-  const printWindow = window.open('', '_blank', 'width=450,height=650');
-  if(!printWindow) {
-    showToast('❌ Gagal membuka window cetak (Izinkan Popup)');
-    return;
-  }
-  
+  printWindow.document.open();
   printWindow.document.write(`
     <html>
     <head>
