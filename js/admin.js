@@ -1,55 +1,64 @@
 // ============================================================
-// JastipKu - Admin Panel JS
+// JastipKu - Admin Panel JS (Firebase async)
 // ============================================================
 
 let currentSection = 'dashboard';
 const ADMIN_PASS_KEY = 'jku_admin_auth';
 
-// ---- AUTH ----
-function checkAuth() {
+async function checkAuth() {
   const ok = sessionStorage.getItem(ADMIN_PASS_KEY);
   if (!ok) {
     const pw = prompt('🔐 Masukkan password admin:');
-    const saved = DB.getSettings().adminPass || 'admin123';
-    if (pw !== saved) {
-      alert('Password salah!');
-      window.location.href = '/';
-      return false;
+    const s  = await DB.getSettings();
+    if (pw !== (s.adminPass || 'admin123')) {
+      alert('Password salah!'); window.location.href = '/'; return false;
     }
     sessionStorage.setItem(ADMIN_PASS_KEY, '1');
   }
   return true;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (!checkAuth()) return;
-  showSection('dashboard');
-  applyAdminTheme();
+document.addEventListener('DOMContentLoaded', async () => {
+  showAdminLoading(true);
+  try {
+    await DB.init();
+    const ok = await checkAuth();
+    if (!ok) return;
+    await applyAdminTheme();
+    showSection('dashboard');
+  } catch(e) {
+    console.error(e);
+    alert('Gagal terhubung ke database. Cek koneksi internet.');
+  } finally {
+    showAdminLoading(false);
+  }
 });
 
-function applyAdminTheme() {
-  const s = DB.getSettings();
+function showAdminLoading(show) {
+  document.getElementById('adminLoadingScreen').style.display = show ? 'flex' : 'none';
+  document.getElementById('adminWrap').style.display = show ? 'none' : 'flex';
+}
+
+async function applyAdminTheme() {
+  const s = await DB.getSettings();
   document.title = 'Admin – ' + s.storeName;
   document.getElementById('adminStoreName').textContent = '⚙️ ' + s.storeName;
   document.documentElement.style.setProperty('--primary', s.primaryColor || '#e8501a');
 }
 
-// ---- SECTION NAVIGATION ----
+// ---- NAVIGATION ----
 function showSection(name) {
   currentSection = name;
-  document.querySelectorAll('.nav-link').forEach(el => {
-    el.classList.toggle('active', el.dataset.section === name);
-  });
+  document.querySelectorAll('.nav-link').forEach(el =>
+    el.classList.toggle('active', el.dataset.section === name));
   document.querySelectorAll('.admin-section').forEach(el => el.style.display = 'none');
   const sec = document.getElementById('sec-' + name);
   if (sec) sec.style.display = 'block';
-
   const titles = {
-    dashboard: '📊 Dashboard', products: '🍱 Produk', categories: '📂 Kategori',
-    orders: '📦 Pesanan', banners: '📢 Banner & Promo', settings: '⚙️ Pengaturan'
+    dashboard:'📊 Dashboard', products:'🍱 Produk', categories:'📂 Kategori',
+    orders:'📦 Pesanan', banners:'📢 Banner & Promo', settings:'⚙️ Pengaturan'
   };
   document.getElementById('pageHeading').textContent = titles[name] || name;
-
   const renderers = {
     dashboard: renderDashboard, products: renderProducts, categories: renderCategories,
     orders: renderOrders, banners: renderBanners, settings: renderSettings
@@ -58,7 +67,6 @@ function showSection(name) {
   closeMobileSidebar();
 }
 
-// ---- MOBILE SIDEBAR ----
 function openMobileSidebar() {
   document.getElementById('sidebar').classList.add('mobile-open');
   document.getElementById('sidebarBackdrop').classList.add('show');
@@ -69,65 +77,66 @@ function closeMobileSidebar() {
 }
 
 // ---- DASHBOARD ----
-function renderDashboard() {
-  const orders = DB.getOrders();
-  const products = DB.getProducts();
-  const today = new Date(); today.setHours(0,0,0,0);
-  const todayOrders = orders.filter(o => o.createdAt >= today.getTime());
-  const todayRevenue = todayOrders.reduce((s,o) => s+o.total, 0);
-  const pending = orders.filter(o => o.status === 'pending').length;
-  const totalRevenue = orders.filter(o => o.status !== 'cancel').reduce((s,o) => s+o.total, 0);
+async function renderDashboard() {
+  try {
+    const orders   = await DB.getOrders();
+    const products = await DB.getProducts();
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const todayOrders   = orders.filter(o => o.createdAt >= today.getTime());
+    const todayRevenue  = todayOrders.reduce((s,o) => s+o.total, 0);
+    const pending       = orders.filter(o => o.status === 'pending').length;
+    const totalRevenue  = orders.filter(o => o.status !== 'cancel').reduce((s,o) => s+o.total, 0);
 
-  document.getElementById('statTodayOrders').textContent = todayOrders.length;
-  document.getElementById('statPending').textContent = pending;
-  document.getElementById('statTodayRevenue').textContent = DB.formatRupiah(todayRevenue);
-  document.getElementById('statTotalRevenue').textContent = DB.formatRupiah(totalRevenue);
-  document.getElementById('statProducts').textContent = products.filter(p=>p.active).length + ' aktif';
+    document.getElementById('statTodayOrders').textContent  = todayOrders.length;
+    document.getElementById('statPending').textContent      = pending;
+    document.getElementById('statTodayRevenue').textContent = DB.formatRupiah(todayRevenue);
+    document.getElementById('statTotalRevenue').textContent = DB.formatRupiah(totalRevenue);
+    document.getElementById('statProducts').textContent     = products.filter(p=>p.active).length + ' aktif';
 
-  // Recent orders
-  const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
-  const tbody = document.getElementById('recentOrdersTbody');
-  tbody.innerHTML = orders.slice(0,8).map(o => `
-    <tr>
-      <td><strong>${o.id}</strong></td>
-      <td>${o.customer.name}</td>
-      <td>${DB.formatRupiah(o.total)}</td>
-      <td><span class="badge badge-${o.status}">${statusLabel[o.status]||o.status}</span></td>
-      <td>${DB.formatDate(o.createdAt)}</td>
-      <td>
-        <select class="status-select" onchange="quickUpdateStatus('${o.id}',this.value)">
-          ${['pending','process','delivery','done','cancel'].map(s=>
-            `<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`
-          ).join('')}
-        </select>
-      </td>
-    </tr>
-  `).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Belum ada pesanan</td></tr>`;
+    const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
+    const tbody = document.getElementById('recentOrdersTbody');
+    tbody.innerHTML = orders.slice(0,8).map(o => `
+      <tr>
+        <td><strong>${o.id}</strong></td>
+        <td>${o.customer.name}</td>
+        <td>${DB.formatRupiah(o.total)}</td>
+        <td><span class="badge badge-${o.status}">${statusLabel[o.status]||o.status}</span></td>
+        <td>${DB.formatDate(o.createdAt)}</td>
+        <td>
+          <select class="status-select" onchange="quickUpdateStatus('${o.id}',this.value)">
+            ${['pending','process','delivery','done','cancel'].map(s=>
+              `<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`
+            ).join('')}
+          </select>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Belum ada pesanan</td></tr>`;
+  } catch(e) { showToast('❌ Gagal memuat dashboard'); }
 }
 
-function quickUpdateStatus(id, status) {
-  DB.updateOrderStatus(id, status);
-  showToast('✅ Status pesanan diperbarui');
-  if (currentSection === 'dashboard') renderDashboard();
-  if (currentSection === 'orders') renderOrders();
+async function quickUpdateStatus(id, status) {
+  try {
+    await DB.updateOrderStatus(id, status);
+    showToast('✅ Status diperbarui');
+    if (currentSection === 'dashboard') renderDashboard();
+    if (currentSection === 'orders') renderOrders();
+  } catch(e) { showToast('❌ Gagal update status'); }
 }
 
 // ---- PRODUCTS ----
 let editingProductId = null;
-const FOOD_EMOJIS = ['🍱','🍜','🍳','🍗','🥩','🍣','🥘','🫕','🍔','🌮','🥗','🍝','🥙','🌯','🍛','🥟','🥡','🧆','🌽','🥞','🍩','🎂','🍰','🧁','🍪','🍫','🍬','🍭','🧃','🥤','🧋','☕','🍵','🍺','🍹','🍸','🧉','🍶','🥛','🍷','🫖','🍾','🥂','🧊','🍿','🥜','🌰','🍌','🍎','🍇','🍓','🫐','🍈','🍉','🍑','🍒','🍋','🍊','🍍','🥭','🍆','🥑','🥕','🧅','🧄','🌶️','🫑','🥦','🫛'];
 
-function renderProducts() {
-  const products = DB.getProducts();
-  const categories = DB.getCategories();
-  const tbody = document.getElementById('productsTbody');
+async function renderProducts() {
+  const products   = await DB.getProducts();
+  const categories = await DB.getCategories();
+  const tbody      = document.getElementById('productsTbody');
   tbody.innerHTML = products.map(p => {
-    const cat = categories.find(c => c.id === p.categoryId);
+    const cat   = categories.find(c => c.id === p.categoryId);
     const thumb = p.imageUrl
-      ? `<img src="${CLOUDINARY.mini(p.imageUrl, 80)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block" onerror="this.outerHTML='<span style=font-size:1.8rem>${p.emoji}</span>'">`
+      ? `<img src="${CLOUDINARY.mini(p.imageUrl,80)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block" onerror="this.outerHTML='<span style=font-size:1.8rem>${p.emoji}</span>'">`
       : `<span style="font-size:1.8rem">${p.emoji}</span>`;
     return `<tr>
       <td>${thumb}</td>
-      <td><strong>${p.name}</strong><br><span style="font-size:0.75rem;color:var(--text3)">${p.desc.substring(0,40)}...</span></td>
+      <td><strong>${p.name}</strong><br><span style="font-size:0.75rem;color:var(--text3)">${(p.desc||'').substring(0,40)}...</span></td>
       <td>${cat ? cat.emoji+' '+cat.name : '-'}</td>
       <td><strong>${DB.formatRupiah(p.price)}</strong></td>
       <td>
@@ -135,25 +144,24 @@ function renderProducts() {
         <span class="badge ${p.stock?'badge-stock':'badge-nostock'}">${p.stock?'Ada Stok':'Habis'}</span>
       </td>
       <td>
-        <button class="btn btn-sm btn-ghost" onclick="editProduct('${p.id}')">✏️ Edit</button>
+        <button class="btn btn-sm btn-ghost" onclick="openProductModal('${p.id}')">✏️ Edit</button>
         <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')" style="margin-left:4px">🗑️</button>
       </td>
     </tr>`;
   }).join('') || `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text3)">Belum ada produk</td></tr>`;
 }
 
-function openProductModal(id = null) {
+async function openProductModal(id = null) {
   editingProductId = id;
-  const categories = DB.getCategories().filter(c => c.active);
-  const modal = document.getElementById('productModal');
+  const categories = (await DB.getCategories()).filter(c => c.active);
   document.getElementById('productModalTitle').textContent = id ? '✏️ Edit Produk' : '➕ Tambah Produk';
 
-  let p = { id:'', categoryId:'', name:'', desc:'', price:'', emoji:'🍱', imageUrl:'', active:true, stock:true };
-  if (id) { const found = DB.getProducts().find(x => x.id === id); if (found) p = { ...found }; }
+  let p = { categoryId:'', name:'', desc:'', price:'', emoji:'🍱', imageUrl:'', active:true, stock:true };
+  if (id) { const found = (await DB.getProducts()).find(x => x.id === id); if (found) p = { ...found }; }
 
-  document.getElementById('pName').value = p.name;
-  document.getElementById('pDesc').value = p.desc;
-  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pName').value    = p.name;
+  document.getElementById('pDesc').value    = p.desc;
+  document.getElementById('pPrice').value   = p.price;
   document.getElementById('pCat').innerHTML = categories.map(c =>
     `<option value="${c.id}" ${c.id===p.categoryId?'selected':''}>${c.emoji} ${c.name}</option>`
   ).join('');
@@ -161,25 +169,22 @@ function openProductModal(id = null) {
   document.getElementById('pImageUrl').value = p.imageUrl || '';
   renderImagePreview(p.imageUrl);
   document.getElementById('pActive').className = 'toggle' + (p.active?' on':'');
-  document.getElementById('pActiveVal').value = p.active ? '1' : '0';
-  document.getElementById('pStock').className = 'toggle' + (p.stock?' on':'');
-  document.getElementById('pStockVal').value = p.stock ? '1' : '0';
-
-  modal.classList.add('open');
+  document.getElementById('pActiveVal').value  = p.active ? '1' : '0';
+  document.getElementById('pStock').className  = 'toggle' + (p.stock?' on':'');
+  document.getElementById('pStockVal').value   = p.stock ? '1' : '0';
+  document.getElementById('productModal').classList.add('open');
 }
 
 function renderImagePreview(url) {
   const wrap = document.getElementById('imagePreviewWrap');
   if (url) {
-    const thumb = CLOUDINARY.thumb(url, 400);
-    wrap.innerHTML = `<div style="position:relative;display:inline-block">
-      <img src="${thumb}" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block" onerror="this.parentNode.innerHTML='<span style=color:var(--text3)>Gagal load gambar</span>'"/>
+    wrap.innerHTML = `<div style="position:relative;display:inline-block;width:100%">
+      <img src="${CLOUDINARY.thumb(url,400)}" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;display:block" onerror="this.parentNode.innerHTML='<span style=color:var(--text3)>Gagal load gambar</span>'"/>
       <button onclick="removeProductImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.85rem">✕</button>
     </div>`;
   } else {
     wrap.innerHTML = `<div style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--text3);font-size:0.82rem">
-      <div style="font-size:1.8rem;margin-bottom:6px">📷</div>
-      Belum ada foto
+      <div style="font-size:1.8rem;margin-bottom:6px">📷</div>Belum ada foto
     </div>`;
   }
 }
@@ -193,89 +198,80 @@ function removeProductImage() {
 async function uploadProductImage(input) {
   const file = input.files[0];
   if (!file) return;
-
-  // Validate
-  if (!file.type.startsWith('image/')) { showToast('❗ File harus berupa gambar!'); return; }
-  if (file.size > 5 * 1024 * 1024) { showToast('❗ Ukuran gambar maksimal 5MB!'); return; }
+  if (!file.type.startsWith('image/'))    { showToast('❗ File harus berupa gambar!'); return; }
+  if (file.size > 5 * 1024 * 1024)        { showToast('❗ Ukuran gambar maksimal 5MB!'); return; }
 
   const btn = document.getElementById('uploadBtn');
-  btn.textContent = '⏳ Mengupload...';
-  btn.disabled = true;
-
+  btn.textContent = '⏳ Mengupload...'; btn.disabled = true;
   try {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY.uploadPreset);
     formData.append('folder', 'jastipku/products');
-
     const res = await fetch(CLOUDINARY.baseUrl(), { method:'POST', body: formData });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || 'Upload gagal');
-    }
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || 'Upload gagal'); }
     const data = await res.json();
     document.getElementById('pImageUrl').value = data.secure_url;
     renderImagePreview(data.secure_url);
     showToast('✅ Foto berhasil diupload!');
   } catch(e) {
-    console.error(e);
-    showToast('❌ Upload gagal: ' + e.message + '. Cek upload preset Cloudinary (harus unsigned).');
+    showToast('❌ Upload gagal: ' + e.message);
   } finally {
-    btn.textContent = '📷 Upload Foto';
-    btn.disabled = false;
-    input.value = '';
+    btn.textContent = '📷 Upload Foto'; btn.disabled = false; input.value = '';
   }
+}
+
+async function saveProduct() {
+  const name     = document.getElementById('pName').value.trim();
+  const desc     = document.getElementById('pDesc').value.trim();
+  const price    = parseInt(document.getElementById('pPrice').value);
+  const catId    = document.getElementById('pCat').value;
+  const emoji    = document.getElementById('pEmojiVal').value;
+  const imageUrl = document.getElementById('pImageUrl').value.trim();
+  const active   = document.getElementById('pActiveVal').value === '1';
+  const stock    = document.getElementById('pStockVal').value === '1';
+
+  if (!name || !price || !catId) { showToast('❗ Nama, kategori, dan harga wajib diisi!'); return; }
+
+  const btn = document.querySelector('#productModal .modal-footer .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  try {
+    const id = editingProductId || DB.genId();
+    await DB.saveProduct({ id, categoryId:catId, name, desc, price, emoji, imageUrl, active, stock });
+    closeModal('productModal');
+    renderProducts();
+    showToast(editingProductId ? '✅ Produk diperbarui!' : '✅ Produk ditambahkan!');
+  } catch(e) {
+    showToast('❌ Gagal menyimpan: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Simpan';
+  }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Hapus produk ini?')) return;
+  try {
+    await DB.deleteProduct(id);
+    renderProducts();
+    showToast('🗑️ Produk dihapus');
+  } catch(e) { showToast('❌ Gagal menghapus'); }
 }
 
 function toggleField(toggleId, valId) {
   const el = document.getElementById(toggleId);
-  const val = document.getElementById(valId);
   const on = !el.classList.contains('on');
   el.className = 'toggle' + (on?' on':'');
-  val.value = on ? '1' : '0';
-}
-
-function saveProduct() {
-  const name    = document.getElementById('pName').value.trim();
-  const desc    = document.getElementById('pDesc').value.trim();
-  const price   = parseInt(document.getElementById('pPrice').value);
-  const catId   = document.getElementById('pCat').value;
-  const emoji   = document.getElementById('pEmojiVal').value;
-  const imageUrl= document.getElementById('pImageUrl').value.trim();
-  const active  = document.getElementById('pActiveVal').value === '1';
-  const stock   = document.getElementById('pStockVal').value === '1';
-
-  if (!name || !price || !catId) { showToast('❗ Nama, kategori, dan harga wajib diisi!'); return; }
-
-  let products = DB.getProducts();
-  if (editingProductId) {
-    const idx = products.findIndex(p => p.id === editingProductId);
-    if (idx >= 0) products[idx] = { ...products[idx], name, desc, price, categoryId:catId, emoji, imageUrl, active, stock };
-  } else {
-    products.push({ id: DB.genId(), categoryId:catId, name, desc, price, emoji, imageUrl, active, stock });
-  }
-  DB.saveProducts(products);
-  closeModal('productModal');
-  renderProducts();
-  showToast(editingProductId ? '✅ Produk diperbarui!' : '✅ Produk ditambahkan!');
-}
-
-function editProduct(id) { openProductModal(id); }
-function deleteProduct(id) {
-  if (!confirm('Hapus produk ini?')) return;
-  DB.saveProducts(DB.getProducts().filter(p => p.id !== id));
-  renderProducts();
-  showToast('🗑️ Produk dihapus');
+  document.getElementById(valId).value = on ? '1' : '0';
 }
 
 // ---- CATEGORIES ----
 let editingCatId = null;
 const CAT_EMOJIS = ['🍱','🍜','🍔','🥤','🧃','🍿','🧊','🥩','🍰','🌮','🥗','🍣','🍝','🥘','🍛','☕','🍵','🥞','🎂'];
 
-function renderCategories() {
-  const cats = DB.getCategories();
-  const products = DB.getProducts();
-  const tbody = document.getElementById('catsTbody');
+async function renderCategories() {
+  const cats     = await DB.getCategories();
+  const products = await DB.getProducts();
+  const tbody    = document.getElementById('catsTbody');
   tbody.innerHTML = cats.map(c => {
     const count = products.filter(p => p.categoryId === c.id).length;
     return `<tr>
@@ -284,23 +280,23 @@ function renderCategories() {
       <td>${count} produk</td>
       <td><span class="badge ${c.active?'badge-active':'badge-inactive'}">${c.active?'Aktif':'Nonaktif'}</span></td>
       <td>
-        <button class="btn btn-sm btn-ghost" onclick="editCategory('${c.id}')">✏️ Edit</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteCategory('${c.id}')" style="margin-left:4px">🗑️</button>
+        <button class="btn btn-sm btn-ghost" onclick="openCatModal('${c.id}')">✏️ Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteCat('${c.id}')" style="margin-left:4px">🗑️</button>
       </td>
     </tr>`;
   }).join('') || `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text3)">Belum ada kategori</td></tr>`;
 }
 
-function openCatModal(id = null) {
+async function openCatModal(id = null) {
   editingCatId = id;
   let c = { name:'', emoji:'🍱', active:true };
-  if (id) { const found = DB.getCategories().find(x => x.id === id); if (found) c = { ...found }; }
+  if (id) { const found = (await DB.getCategories()).find(x => x.id === id); if (found) c = { ...found }; }
   document.getElementById('catModalTitle').textContent = id ? '✏️ Edit Kategori' : '➕ Tambah Kategori';
-  document.getElementById('cName').value = c.name;
+  document.getElementById('cName').value    = c.name;
   document.getElementById('cEmoji').textContent = c.emoji;
   document.getElementById('cEmojiVal').value = c.emoji;
   document.getElementById('cActive').className = 'toggle' + (c.active?' on':'');
-  document.getElementById('cActiveVal').value = c.active ? '1' : '0';
+  document.getElementById('cActiveVal').value  = c.active ? '1' : '0';
   document.getElementById('catEmojiGrid').innerHTML = CAT_EMOJIS.map(e =>
     `<div class="emoji-opt ${e===c.emoji?'selected':''}" onclick="selectCatEmoji('${e}')">${e}</div>`
   ).join('');
@@ -309,100 +305,95 @@ function openCatModal(id = null) {
 
 function selectCatEmoji(e) {
   document.getElementById('cEmoji').textContent = e;
-  document.getElementById('cEmojiVal').value = e;
-  document.querySelectorAll('#catEmojiGrid .emoji-opt').forEach(el => el.classList.toggle('selected', el.textContent === e));
+  document.getElementById('cEmojiVal').value    = e;
+  document.querySelectorAll('#catEmojiGrid .emoji-opt').forEach(el =>
+    el.classList.toggle('selected', el.textContent === e));
 }
 
-function saveCategory() {
+async function saveCategory() {
   const name   = document.getElementById('cName').value.trim();
   const emoji  = document.getElementById('cEmojiVal').value;
   const active = document.getElementById('cActiveVal').value === '1';
   if (!name) { showToast('❗ Nama kategori wajib diisi!'); return; }
-  let cats = DB.getCategories();
-  if (editingCatId) {
-    const idx = cats.findIndex(c => c.id === editingCatId);
-    if (idx >= 0) cats[idx] = { ...cats[idx], name, emoji, active };
-  } else {
-    cats.push({ id: DB.genId(), name, emoji, active });
-  }
-  DB.saveCategories(cats);
-  closeModal('catModal');
-  renderCategories();
-  showToast(editingCatId ? '✅ Kategori diperbarui!' : '✅ Kategori ditambahkan!');
+  try {
+    const id = editingCatId || DB.genId();
+    await DB.saveCategory({ id, name, emoji, active });
+    closeModal('catModal');
+    renderCategories();
+    showToast(editingCatId ? '✅ Kategori diperbarui!' : '✅ Kategori ditambahkan!');
+  } catch(e) { showToast('❌ Gagal menyimpan'); }
 }
 
-function editCategory(id) { openCatModal(id); }
-function deleteCategory(id) {
-  if (!confirm('Hapus kategori ini? Produk terkait tidak akan terhapus.')) return;
-  DB.saveCategories(DB.getCategories().filter(c => c.id !== id));
-  renderCategories();
-  showToast('🗑️ Kategori dihapus');
+async function deleteCat(id) {
+  if (!confirm('Hapus kategori ini?')) return;
+  try {
+    await DB.deleteCategory(id);
+    renderCategories();
+    showToast('🗑️ Kategori dihapus');
+  } catch(e) { showToast('❌ Gagal menghapus'); }
 }
 
 // ---- ORDERS ----
-function renderOrders() {
-  const orders = DB.getOrders();
+async function renderOrders() {
   const filter = document.getElementById('orderFilter')?.value || 'all';
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
-  const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
-  const tbody = document.getElementById('ordersTbody');
-  tbody.innerHTML = filtered.map(o => `
-    <tr>
-      <td><strong style="font-size:0.78rem">${o.id}</strong></td>
-      <td><strong>${o.customer.name}</strong><br><span style="font-size:0.72rem;color:var(--text3)">${o.customer.address}</span></td>
-      <td style="max-width:140px"><span style="font-size:0.75rem">${o.items.map(i=>`${i.emoji}${i.name}×${i.qty}`).join(', ')}</span></td>
-      <td><strong>${DB.formatRupiah(o.total)}</strong></td>
-      <td>
-        <select class="status-select" onchange="quickUpdateStatus('${o.id}',this.value)">
-          ${['pending','process','delivery','done','cancel'].map(s=>
-            `<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`
-          ).join('')}
-        </select>
-      </td>
-      <td style="font-size:0.72rem">${DB.formatDate(o.createdAt)}</td>
-      <td>
-        <button class="btn btn-sm btn-ghost" onclick="viewOrderDetail('${o.id}')">👁️</button>
-      </td>
-    </tr>
-  `).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Belum ada pesanan</td></tr>`;
+  try {
+    let orders = await DB.getOrders();
+    if (filter !== 'all') orders = orders.filter(o => o.status === filter);
+    const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
+    const tbody = document.getElementById('ordersTbody');
+    tbody.innerHTML = orders.map(o => `
+      <tr>
+        <td><strong style="font-size:0.78rem">${o.id}</strong></td>
+        <td><strong>${o.customer.name}</strong><br><span style="font-size:0.72rem;color:var(--text3)">${o.customer.address}</span></td>
+        <td style="max-width:140px"><span style="font-size:0.75rem">${o.items.map(i=>`${i.emoji}${i.name}×${i.qty}`).join(', ')}</span></td>
+        <td><strong>${DB.formatRupiah(o.total)}</strong></td>
+        <td>
+          <select class="status-select" onchange="quickUpdateStatus('${o.id}',this.value)">
+            ${['pending','process','delivery','done','cancel'].map(s=>
+              `<option value="${s}" ${o.status===s?'selected':''}>${statusLabel[s]}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td style="font-size:0.72rem">${DB.formatDate(o.createdAt)}</td>
+        <td><button class="btn btn-sm btn-ghost" onclick="viewOrderDetail('${o.id}')">👁️</button></td>
+      </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Belum ada pesanan</td></tr>`;
+  } catch(e) { showToast('❌ Gagal memuat pesanan'); }
 }
 
-function viewOrderDetail(id) {
-  const o = DB.getOrders().find(x => x.id === id);
+async function viewOrderDetail(id) {
+  const orders = await DB.getOrders();
+  const o = orders.find(x => x.id === id);
   if (!o) return;
   const statusLabel = { pending:'⏳ Menunggu', process:'⚙️ Diproses', delivery:'🛵 Dikirim', done:'✅ Selesai', cancel:'❌ Dibatal' };
-  const msg = `📋 DETAIL PESANAN\n\nID: ${o.id}\nTanggal: ${DB.formatDate(o.createdAt)}\n\n👤 Pelanggan: ${o.customer.name}\n📍 Alamat: ${o.customer.address}\n${o.customer.note?'📝 Catatan: '+o.customer.note:''}\n\n🛒 ITEM:\n${o.items.map(i=>`  • ${i.emoji} ${i.name} ×${i.qty} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n')}\n\nSubtotal: ${DB.formatRupiah(o.subtotal)}\nOngkir: ${DB.formatRupiah(o.deliveryFee)}\nTOTAL: ${DB.formatRupiah(o.total)}\n\nStatus: ${statusLabel[o.status]}`;
-  alert(msg);
+  alert(`📋 DETAIL PESANAN\n\nID: ${o.id}\nTanggal: ${DB.formatDate(o.createdAt)}\n\n👤 ${o.customer.name}\n📍 ${o.customer.address}\n${o.customer.note?'📝 '+o.customer.note:''}\n\n${o.items.map(i=>`  • ${i.emoji} ${i.name} ×${i.qty} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n')}\n\nSubtotal: ${DB.formatRupiah(o.subtotal)}\nOngkir: ${DB.formatRupiah(o.deliveryFee)}\nTOTAL: ${DB.formatRupiah(o.total)}\n\nStatus: ${statusLabel[o.status]}`);
 }
 
 // ---- BANNERS ----
 let editingBannerId = null;
 const BANNER_COLORS = ['#e8501a','#2d8a4e','#7b4fc4','#0a369d','#d4820a','#c0392b','#0c5460','#1a0a00'];
 
-function renderBanners() {
-  const banners = DB.getBanners();
+async function renderBanners() {
+  const banners = await DB.getBanners();
   const list = document.getElementById('bannersList');
   list.innerHTML = banners.map(b => `
     <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px">
       <div style="width:12px;height:36px;border-radius:4px;background:${b.color};flex-shrink:0"></div>
       <span style="flex:1;font-size:0.88rem;font-weight:700">${b.text}</span>
       <span class="badge ${b.active?'badge-active':'badge-inactive'}">${b.active?'Aktif':'Off'}</span>
-      <button class="btn btn-sm btn-ghost" onclick="editBanner('${b.id}')">✏️</button>
+      <button class="btn btn-sm btn-ghost" onclick="openBannerModal('${b.id}')">✏️</button>
       <button class="btn btn-sm btn-danger" onclick="deleteBanner('${b.id}')">🗑️</button>
-    </div>
-  `).join('') || `<div style="text-align:center;padding:20px;color:var(--text3)">Belum ada banner</div>`;
+    </div>`).join('') || `<div style="text-align:center;padding:20px;color:var(--text3)">Belum ada banner</div>`;
 }
 
-function openBannerModal(id = null) {
+async function openBannerModal(id = null) {
   editingBannerId = id;
   let b = { text:'', color:'#e8501a', active:true };
-  if (id) { const found = DB.getBanners().find(x => x.id === id); if (found) b = { ...found }; }
+  if (id) { const found = (await DB.getBanners()).find(x => x.id === id); if (found) b = { ...found }; }
   document.getElementById('bannerModalTitle').textContent = id ? '✏️ Edit Banner' : '➕ Tambah Banner';
-  document.getElementById('bText').value = b.text;
+  document.getElementById('bText').value   = b.text;
   document.getElementById('bColorVal').value = b.color;
   document.getElementById('bActive').className = 'toggle' + (b.active?' on':'');
-  document.getElementById('bActiveVal').value = b.active ? '1' : '0';
-  // Color swatches
+  document.getElementById('bActiveVal').value  = b.active ? '1' : '0';
   document.getElementById('colorSwatches').innerHTML = BANNER_COLORS.map(c =>
     `<div class="color-swatch ${c===b.color?'active':''}" style="background:${c}" onclick="selectBannerColor('${c}')"></div>`
   ).join('');
@@ -411,61 +402,52 @@ function openBannerModal(id = null) {
 
 function selectBannerColor(c) {
   document.getElementById('bColorVal').value = c;
-  document.querySelectorAll('.color-swatch').forEach(el => el.classList.toggle('active', el.style.background===c || el.dataset.c===c));
-  document.querySelectorAll('.color-swatch').forEach(el => {
-    el.classList.toggle('active', el.style.backgroundColor === hexToRgb(c) || el.style.background === c);
-  });
-}
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return `rgb(${r}, ${g}, ${b})`;
+  document.querySelectorAll('.color-swatch').forEach(el =>
+    el.classList.toggle('active', el.style.background === c || el.style.backgroundColor === c));
 }
 
-function saveBanner() {
+async function saveBanner() {
   const text   = document.getElementById('bText').value.trim();
   const color  = document.getElementById('bColorVal').value;
   const active = document.getElementById('bActiveVal').value === '1';
   if (!text) { showToast('❗ Teks banner wajib diisi!'); return; }
-  let banners = DB.getBanners();
-  if (editingBannerId) {
-    const idx = banners.findIndex(b => b.id === editingBannerId);
-    if (idx >= 0) banners[idx] = { ...banners[idx], text, color, active };
-  } else {
-    banners.push({ id: DB.genId(), text, color, active });
-  }
-  DB.saveBanners(banners);
-  closeModal('bannerModal');
-  renderBanners();
-  showToast('✅ Banner disimpan!');
+  try {
+    const id = editingBannerId || DB.genId();
+    await DB.saveBanner({ id, text, color, active });
+    closeModal('bannerModal');
+    renderBanners();
+    showToast('✅ Banner disimpan!');
+  } catch(e) { showToast('❌ Gagal menyimpan'); }
 }
 
-function editBanner(id) { openBannerModal(id); }
-function deleteBanner(id) {
+async function deleteBanner(id) {
   if (!confirm('Hapus banner ini?')) return;
-  DB.saveBanners(DB.getBanners().filter(b => b.id !== id));
-  renderBanners();
-  showToast('🗑️ Banner dihapus');
+  try {
+    await DB.deleteBanner(id);
+    renderBanners();
+    showToast('🗑️ Banner dihapus');
+  } catch(e) { showToast('❌ Gagal menghapus'); }
 }
 
 // ---- SETTINGS ----
 const PRIMARY_COLORS = ['#e8501a','#d63031','#e17055','#00b894','#0984e3','#6c5ce7','#fdcb6e','#2d3436'];
 const ACCENT_COLORS  = ['#f5a623','#fdcb6e','#55efc4','#74b9ff','#a29bfe','#fd79a8','#e17055','#dfe6e9'];
 
-function renderSettings() {
-  const s = DB.getSettings();
-  document.getElementById('sStoreName').value   = s.storeName;
-  document.getElementById('sOwnerName').value   = s.ownerName;
-  document.getElementById('sWhatsapp').value    = s.whatsapp;
-  document.getElementById('sAddress').value     = s.address;
-  document.getElementById('sOpenTime').value    = s.openTime;
-  document.getElementById('sCloseTime').value   = s.closeTime;
-  document.getElementById('sDelivery').value    = s.deliveryFee;
-  document.getElementById('sMinOrder').value    = s.minOrder;
-  document.getElementById('sGreeting').value    = s.greeting;
-  document.getElementById('sAdminPass').value   = s.adminPass || 'admin123';
-  document.getElementById('sLogoEmoji').value   = s.logoEmoji || '🛵';
-  document.getElementById('sIsOpen').className  = 'toggle' + (s.isOpen?' on':'');
-  document.getElementById('sIsOpenVal').value   = s.isOpen ? '1' : '0';
+async function renderSettings() {
+  const s = await DB.getSettings();
+  document.getElementById('sStoreName').value  = s.storeName;
+  document.getElementById('sOwnerName').value  = s.ownerName;
+  document.getElementById('sWhatsapp').value   = s.whatsapp;
+  document.getElementById('sAddress').value    = s.address;
+  document.getElementById('sOpenTime').value   = s.openTime;
+  document.getElementById('sCloseTime').value  = s.closeTime;
+  document.getElementById('sDelivery').value   = s.deliveryFee;
+  document.getElementById('sMinOrder').value   = s.minOrder;
+  document.getElementById('sGreeting').value   = s.greeting;
+  document.getElementById('sAdminPass').value  = s.adminPass || 'admin123';
+  document.getElementById('sLogoEmoji').value  = s.logoEmoji || '🛵';
+  document.getElementById('sIsOpen').className = 'toggle' + (s.isOpen?' on':'');
+  document.getElementById('sIsOpenVal').value  = s.isOpen ? '1' : '0';
 
   document.getElementById('primaryColors').innerHTML = PRIMARY_COLORS.map(c =>
     `<div class="color-swatch ${c===s.primaryColor?'active':''}" style="background:${c}" onclick="document.getElementById('sPrimary').value='${c}';this.parentNode.querySelectorAll('.color-swatch').forEach(x=>x.classList.remove('active'));this.classList.add('active')"></div>`
@@ -478,7 +460,7 @@ function renderSettings() {
   document.getElementById('sAccent').value = s.accentColor || '#f5a623';
 }
 
-function saveSettings() {
+async function saveSettings() {
   const s = {
     storeName:    document.getElementById('sStoreName').value.trim(),
     ownerName:    document.getElementById('sOwnerName').value.trim(),
@@ -496,30 +478,49 @@ function saveSettings() {
     accentColor:  document.getElementById('sAccent').value,
   };
   if (!s.storeName || !s.whatsapp) { showToast('❗ Nama toko & WhatsApp wajib diisi!'); return; }
-  DB.saveSettings(s);
-  applyAdminTheme();
-  document.documentElement.style.setProperty('--primary', s.primaryColor);
-  showToast('✅ Pengaturan disimpan!');
+  const btn = document.querySelector('#sec-settings .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  try {
+    await DB.saveSettings(s);
+    applyAdminTheme();
+    document.documentElement.style.setProperty('--primary', s.primaryColor);
+    showToast('✅ Pengaturan disimpan!');
+  } catch(e) { showToast('❌ Gagal menyimpan'); }
+  finally { btn.disabled = false; btn.textContent = '💾 Simpan Semua Pengaturan'; }
 }
 
-function resetData(type) {
+async function resetData(type) {
   if (!confirm(`Reset ${type}? Data akan kembali ke default!`)) return;
-  if (type === 'products') { localStorage.removeItem(DB.KEYS.PRODUCTS); renderProducts(); }
-  if (type === 'categories') { localStorage.removeItem(DB.KEYS.CATEGORIES); renderCategories(); }
-  if (type === 'orders') { localStorage.removeItem(DB.KEYS.ORDERS); renderOrders(); }
-  if (type === 'all') {
-    Object.values(DB.KEYS).forEach(k => localStorage.removeItem(k));
-    showSection('dashboard');
+  if (type === 'orders') {
+    const orders = await DB.getOrders();
+    for (const o of orders) await DB._fs.deleteDoc(DB._fs.doc(DB._db, 'orders', o.id));
+    renderOrders();
+  } else if (type === 'all') {
+    DB._cache = {};
+    localStorage.removeItem('jku_cart');
+    showToast('🔄 Refresh halaman untuk reset penuh');
+    return;
   }
   showToast('🔄 Data direset!');
 }
 
-// ---- MODAL UTILS ----
+// ---- MODAL ----
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ---- TOAST ----
 function showToast(msg) {
   const t = document.getElementById('adminToast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// ---- Expose to global scope ----
+Object.assign(window, {
+  showSection, openMobileSidebar, closeMobileSidebar,
+  quickUpdateStatus, openProductModal, saveProduct, deleteProduct,
+  renderImagePreview, removeProductImage, uploadProductImage, toggleField,
+  openCatModal, saveCategory, deleteCat, selectCatEmoji,
+  renderOrders, viewOrderDetail,
+  openBannerModal, saveBanner, deleteBanner, selectBannerColor,
+  saveSettings, resetData, closeModal
+});
