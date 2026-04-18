@@ -360,12 +360,127 @@ async function renderOrders() {
   } catch(e) { showToast('❌ Gagal memuat pesanan'); }
 }
 
+let currentOrderForInvoice = null;
+
 async function viewOrderDetail(id) {
   const orders = await DB.getOrders();
   const o = orders.find(x => x.id === id);
   if (!o) return;
+  currentOrderForInvoice = o;
+
   const statusLabel = { pending:'⏳ Menunggu', process:'⚙️ Diproses', delivery:'🛵 Dikirim', done:'✅ Selesai', cancel:'❌ Dibatal' };
-  alert(`📋 DETAIL PESANAN\n\nID: ${o.id}\nTanggal: ${DB.formatDate(o.createdAt)}\n\n👤 ${o.customer.name}\n📍 ${o.customer.address}\n${o.customer.note?'📝 '+o.customer.note:''}\n\n${o.items.map(i=>`  • ${i.emoji} ${i.name} ×${i.qty} = ${DB.formatRupiah(i.price*i.qty)}`).join('\n')}\n\nSubtotal: ${DB.formatRupiah(o.subtotal)}\nOngkir: ${DB.formatRupiah(o.deliveryFee)}\nTOTAL: ${DB.formatRupiah(o.total)}\n\nStatus: ${statusLabel[o.status]}`);
+  const s = await DB.getSettings();
+
+  const text = \`==================================
+ \${s.storeName.toUpperCase()}
+==================================
+No. Nota : \${o.id}
+Tanggal  : \${DB.formatDate(o.createdAt)}
+Status   : \${statusLabel[o.status] || o.status}
+----------------------------------
+PELANGGAN:
+Nama   : \${o.customer.name}
+Alamat : \${o.customer.address}
+\${o.customer.note ? 'Catatan: ' + o.customer.note + '\\n' : ''}----------------------------------
+PESANAN:
+\${o.items.map(i => \`\${i.name}\\n  \${i.qty} x \${DB.formatRupiah(i.price)} = \${DB.formatRupiah(i.price*i.qty)}\`).join('\\n')}
+----------------------------------
+Subtotal : \${DB.formatRupiah(o.subtotal)}
+Ongkir   : \${DB.formatRupiah(o.deliveryFee)}
+----------------------------------
+TOTAL    : \${DB.formatRupiah(o.total)}
+==================================
+Terima kasih telah berbelanja!\`;
+
+  document.getElementById('invoiceContent').textContent = text;
+  document.getElementById('currentOrderId').value = o.id;
+  document.getElementById('orderModal').classList.add('open');
+}
+
+function copyInvoiceText() {
+  const text = document.getElementById('invoiceContent').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✅ Teks invoice disalin!');
+  }).catch(() => {
+    showToast('❌ Gagal menyalin teks');
+  });
+}
+
+async function printInvoice() {
+  if (!currentOrderForInvoice) return;
+  const o = currentOrderForInvoice;
+  const s = await DB.getSettings();
+  const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
+  
+  const printWindow = window.open('', '_blank', 'width=450,height=650');
+  if(!printWindow) {
+    showToast('❌ Gagal membuka window cetak (Izinkan Popup)');
+    return;
+  }
+  
+  printWindow.document.write(\`
+    <html>
+    <head>
+      <title>Invoice #\${o.id}</title>
+      <style>
+        body { font-family: 'Courier New', Courier, monospace; padding: 20px; color: #000; font-size: 14px; line-height: 1.5; max-width: 400px; margin: 0 auto; }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .divider { border-top: 1px dashed #000; margin: 10px 0; }
+        .row { display: flex; justify-content: space-between; }
+        h2 { margin: 0 0 10px 0; font-size: 20px; }
+        .item-name { margin-bottom: 2px; }
+        .item-detail { display: flex; justify-content: space-between; padding-left: 10px; font-size: 0.9em; }
+        @media print {
+          @page { margin: 0; }
+          body { padding: 10px; max-width: 100%; width: 100%; }
+        }
+      </style>
+    </head>
+    <body onload="window.print(); window.close();">
+      <div class="center">
+        <h2>\${s.logoEmoji} \${s.storeName}</h2>
+        <div>\${s.address}</div>
+        <div>WA: +\${s.whatsapp}</div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="row"><span>Nota:</span><span class="bold">\${o.id}</span></div>
+        <div class="row"><span>Tgl:</span><span>\${DB.formatDate(o.createdAt)}</span></div>
+        <div class="row"><span>Status:</span><span>\${statusLabel[o.status]||o.status}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div>
+        <div class="bold">Yth. \${o.customer.name}</div>
+        <div>\${o.customer.address}</div>
+        \${o.customer.note ? \`<div><i>Catatan: \${o.customer.note}</i></div>\` : ''}
+      </div>
+      <div class="divider"></div>
+      <div>
+        \${o.items.map(i => \`
+          <div class="item">
+            <div class="item-name">\${i.emoji} \${i.name}</div>
+            <div class="item-detail">
+              <span>\${i.qty} x \${DB.formatRupiah(i.price)}</span>
+              <span>\${DB.formatRupiah(i.price * i.qty)}</span>
+            </div>
+          </div>
+        \`).join('')}
+      </div>
+      <div class="divider"></div>
+      <div class="row"><span>Subtotal</span><span>\${DB.formatRupiah(o.subtotal)}</span></div>
+      <div class="row"><span>Ongkir</span><span>\${DB.formatRupiah(o.deliveryFee)}</span></div>
+      <div class="divider" style="border-top: 2px dashed #000"></div>
+      <div class="row bold" style="font-size: 16px;"><span>TOTAL</span><span>\${DB.formatRupiah(o.total)}</span></div>
+      <div class="divider"></div>
+      <div class="center" style="margin-top: 20px; font-size: 0.9em;">
+        Terima kasih atas pesanan Anda!<br>
+        ~ \${s.storeName} ~
+      </div>
+    </body>
+    </html>
+  \`);
+  printWindow.document.close();
 }
 
 // ---- BANNERS ----
@@ -520,7 +635,7 @@ Object.assign(window, {
   quickUpdateStatus, openProductModal, saveProduct, deleteProduct,
   renderImagePreview, removeProductImage, uploadProductImage, toggleField,
   openCatModal, saveCategory, deleteCat, selectCatEmoji,
-  renderOrders, viewOrderDetail,
+  renderOrders, viewOrderDetail, copyInvoiceText, printInvoice,
   openBannerModal, saveBanner, deleteBanner, selectBannerColor,
   saveSettings, resetData, closeModal
 });
