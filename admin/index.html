@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin–JastipKu</title>
+  <title>Admin – JastipKu</title>
   <link rel="stylesheet" href="/css/admin.css"/>
 </head>
 <body>
@@ -266,6 +266,22 @@
       </div>
     </div>
 
+    <div class="section-card" style="border-color:#cfe2ff">
+      <div class="section-card-header"><h2 style="color:#0a369d">☁️ Konfigurasi Cloudinary (Upload Foto)</h2></div>
+      <div class="section-card-body">
+        <div class="alert alert-info" style="margin-bottom:10px">
+          Cloud Name: <strong>dyhvx9wit</strong> · Upload Preset: <strong>jastipku_unsigned</strong>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text2);line-height:1.6">
+          Agar upload foto berfungsi, buat <strong>Upload Preset unsigned</strong> di Cloudinary Dashboard:<br>
+          1. Login ke <a href="https://cloudinary.com" target="_blank" style="color:var(--primary)">cloudinary.com</a><br>
+          2. Settings → Upload → Upload Presets → <strong>Add upload preset</strong><br>
+          3. Preset name: <code style="background:var(--bg);padding:1px 6px;border-radius:4px">jastipku_unsigned</code><br>
+          4. Signing mode: <strong>Unsigned</strong> → Save
+        </p>
+      </div>
+    </div>
+
     <button class="btn btn-primary" style="width:100%;padding:14px;font-size:1rem;margin-bottom:18px" onclick="saveSettings()">
       💾 Simpan Semua Pengaturan
     </button>
@@ -311,7 +327,17 @@
           <select class="form-control" id="pCat"></select>
         </div>
         <div class="form-group full">
-          <label class="form-label">Emoji Produk</label>
+          <label class="form-label">📷 Foto Produk (Cloudinary)</label>
+          <div id="imagePreviewWrap" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="cursor:pointer">
+              <button type="button" id="uploadBtn" class="btn btn-ghost btn-sm" onclick="this.parentNode.querySelector('input').click()">📷 Upload Foto</button>
+              <input type="file" accept="image/*" style="display:none" onchange="uploadProductImage(this)"/>
+            </label>
+            <span style="font-size:0.72rem;color:var(--text3)">JPG/PNG/WEBP, maks 5MB</span>
+          </div>
+          <input type="hidden" id="pImageUrl" value=""/>
+        </div>
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
             <span id="pEmoji" style="font-size:2.5rem">🍱</span>
             <span style="font-size:0.8rem;color:var(--text3)">Pilih dari daftar di bawah</span>
