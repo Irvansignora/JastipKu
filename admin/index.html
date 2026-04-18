@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<div class="admin-wrap">
+<div class="admin-wrap" id="adminWrap" style="display:none">
 
 <!-- ======= SIDEBAR ======= -->
 <aside class="sidebar" id="sidebar">
@@ -420,7 +420,17 @@
 <!-- ADMIN TOAST -->
 <div class="admin-toast" id="adminToast"></div>
 
-<script src="/js/data.js"></script>
-<script src="/js/admin.js"></script>
+<!-- LOADING SCREEN -->
+<div id="adminLoadingScreen" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+  <span style="font-size:3rem">⚙️</span>
+  <span style="font-family:'Nunito',sans-serif;font-weight:800;color:var(--primary);font-size:1.1rem">Memuat Panel Admin...</span>
+  <div style="width:48px;height:4px;background:var(--border);border-radius:4px;overflow:hidden">
+    <div style="width:40%;height:100%;background:var(--primary);border-radius:4px;animation:loadbar 1s ease infinite"></div>
+  </div>
+</div>
+<style>@keyframes loadbar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}</style>
+
+<script src="/js/data.js" type="module"></script>
+<script src="/js/admin.js" type="module"></script>
 </body>
 </html>
