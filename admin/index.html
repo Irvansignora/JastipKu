@@ -64,9 +64,18 @@
 
   <!-- ======= DASHBOARD ======= -->
   <div id="sec-dashboard" class="admin-section">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+      <h2 style="margin:0; font-size:1.2rem">Ringkasan</h2>
+      <select id="dashFilter" class="form-control" style="width:auto;padding:6px 12px; font-weight:bold" onchange="renderDashboard()">
+        <option value="today">Harian (Hari Ini)</option>
+        <option value="week">Mingguan (Minggu Ini)</option>
+        <option value="month">Bulanan (Bulan Ini)</option>
+        <option value="all">Semua Waktu</option>
+      </select>
+    </div>
     <div class="stats-grid">
       <div class="stat-card">
-        <span class="stat-label">📦 Pesanan Hari Ini</span>
+        <span class="stat-label" id="dashPeriodLabelOrders">📦 Pesanan Hari Ini</span>
         <span class="stat-val" id="statTodayOrders">0</span>
       </div>
       <div class="stat-card">
@@ -75,7 +84,7 @@
         <span class="stat-badge warn">Perlu tindakan</span>
       </div>
       <div class="stat-card">
-        <span class="stat-label">💰 Pendapatan Hari Ini</span>
+        <span class="stat-label" id="dashPeriodLabelRevenue">💰 Pendapatan Hari Ini</span>
         <span class="stat-val" id="statTodayRevenue" style="font-size:1.2rem">Rp 0</span>
       </div>
       <div class="stat-card">
@@ -144,14 +153,17 @@
     <div class="section-card">
       <div class="section-card-header">
         <h2>📦 Manajemen Pesanan</h2>
-        <select id="orderFilter" class="form-control" style="width:auto;padding:6px 12px" onchange="renderOrders()">
-          <option value="all">Semua</option>
-          <option value="pending">⏳ Menunggu</option>
-          <option value="process">⚙️ Diproses</option>
-          <option value="delivery">🛵 Dikirim</option>
-          <option value="done">✅ Selesai</option>
-          <option value="cancel">❌ Dibatal</option>
-        </select>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <select id="orderFilter" class="form-control" style="width:auto;padding:6px 12px" onchange="renderOrders()">
+            <option value="all">Semua Status</option>
+            <option value="pending">⏳ Menunggu</option>
+            <option value="process">⚙️ Diproses</option>
+            <option value="delivery">🛵 Dikirim</option>
+            <option value="done">✅ Selesai</option>
+            <option value="cancel">❌ Dibatal</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="exportOrdersCSV()">📥 Tarik Laporan</button>
+        </div>
       </div>
       <div style="overflow-x:auto">
         <table class="data-table">
