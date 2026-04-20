@@ -641,6 +641,7 @@ async function renderSettings() {
   document.getElementById('sOpenTime').value   = s.openTime;
   document.getElementById('sCloseTime').value  = s.closeTime;
   document.getElementById('sDelivery').value   = s.deliveryFee;
+  if(document.getElementById('sAdditionalDelivery')) document.getElementById('sAdditionalDelivery').value = s.additionalDeliveryFee || 0;
   document.getElementById('sMinOrder').value   = s.minOrder;
   document.getElementById('sGreeting').value   = s.greeting;
   document.getElementById('sAdminPass').value  = s.adminPass || 'admin123';
@@ -668,6 +669,7 @@ async function saveSettings() {
     openTime:     document.getElementById('sOpenTime').value,
     closeTime:    document.getElementById('sCloseTime').value,
     deliveryFee:  parseInt(document.getElementById('sDelivery').value)||3000,
+    additionalDeliveryFee: parseInt(document.getElementById('sAdditionalDelivery')?.value)||0,
     minOrder:     parseInt(document.getElementById('sMinOrder').value)||15000,
     greeting:     document.getElementById('sGreeting').value.trim(),
     adminPass:    document.getElementById('sAdminPass').value.trim()||'admin123',
