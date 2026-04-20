@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jastipku-v1.5';
+const CACHE_NAME = 'jastipku-v1.6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -26,16 +26,26 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Hanya proses request http/https (mencegah error chrome-extension)
+  if (!e.request.url.startsWith('http')) return;
+  
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (!res || res.status !== 200 || res.type !== 'basic') return res;
-        if (!e.request.url.startsWith('http')) return res; // Mencegah error scheme chrome-extension://
+    fetch(e.request).then(res => {
+      // Jika berhasil ngambil dari internet, update cache biar selalu yang paling baru
+      if (res && res.status === 200 && res.type === 'basic') {
         const clone = res.clone();
         caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => caches.match('/index.html'));
+      }
+      return res;
+    }).catch(() => {
+      // Kalau offline (atau gagal ambil jaringan), baru fallback ke cache
+      return caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        // Fallback jika tidak ada di cache (offline)
+        if (e.request.destination === 'document' || e.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+      });
     })
   );
 });
