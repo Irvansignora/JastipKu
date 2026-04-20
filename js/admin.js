@@ -81,15 +81,44 @@ async function renderDashboard() {
   try {
     const orders   = await DB.getOrders();
     const products = await DB.getProducts();
-    const today    = new Date(); today.setHours(0,0,0,0);
-    const todayOrders   = orders.filter(o => o.createdAt >= today.getTime());
-    const todayRevenue  = todayOrders.reduce((s,o) => s+o.total, 0);
+    const filter   = document.getElementById('dashFilter')?.value || 'today';
+    
+    let startDate = 0;
+    const now = new Date();
+    
+    if (filter === 'today') {
+      const today = new Date(); today.setHours(0,0,0,0);
+      startDate = today.getTime();
+      if(document.getElementById('dashPeriodLabelOrders')) document.getElementById('dashPeriodLabelOrders').textContent = '📦 Pesanan Hari Ini';
+      if(document.getElementById('dashPeriodLabelRevenue')) document.getElementById('dashPeriodLabelRevenue').textContent = '💰 Pendapatan Hari Ini';
+    } else if (filter === 'week') {
+      const week = new Date();
+      const diff = week.getDate() - week.getDay() + (week.getDay() === 0 ? -6 : 1); // Senin
+      week.setDate(diff);
+      week.setHours(0,0,0,0);
+      startDate = week.getTime();
+      if(document.getElementById('dashPeriodLabelOrders')) document.getElementById('dashPeriodLabelOrders').textContent = '📦 Pesanan Minggu Ini';
+      if(document.getElementById('dashPeriodLabelRevenue')) document.getElementById('dashPeriodLabelRevenue').textContent = '💰 Pendapatan Minggu Ini';
+    } else if (filter === 'month') {
+      const month = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate = month.getTime();
+      if(document.getElementById('dashPeriodLabelOrders')) document.getElementById('dashPeriodLabelOrders').textContent = '📦 Pesanan Bulan Ini';
+      if(document.getElementById('dashPeriodLabelRevenue')) document.getElementById('dashPeriodLabelRevenue').textContent = '💰 Pendapatan Bulan Ini';
+    } else {
+      if(document.getElementById('dashPeriodLabelOrders')) document.getElementById('dashPeriodLabelOrders').textContent = '📦 Semua Pesanan';
+      if(document.getElementById('dashPeriodLabelRevenue')) document.getElementById('dashPeriodLabelRevenue').textContent = '💰 Semua Pendapatan';
+    }
+    
+    // Total sesuai filter (kecuali status dibatalkan untuk pendapatan)
+    const periodOrders  = filter === 'all' ? orders : orders.filter(o => o.createdAt >= startDate);
+    const periodRevenue = periodOrders.filter(o => o.status !== 'cancel').reduce((s,o) => s+o.total, 0);
+
     const pending       = orders.filter(o => o.status === 'pending').length;
     const totalRevenue  = orders.filter(o => o.status !== 'cancel').reduce((s,o) => s+o.total, 0);
 
-    document.getElementById('statTodayOrders').textContent  = todayOrders.length;
+    document.getElementById('statTodayOrders').textContent  = periodOrders.length;
     document.getElementById('statPending').textContent      = pending;
-    document.getElementById('statTodayRevenue').textContent = DB.formatRupiah(todayRevenue);
+    document.getElementById('statTodayRevenue').textContent = DB.formatRupiah(periodRevenue);
     document.getElementById('statTotalRevenue').textContent = DB.formatRupiah(totalRevenue);
     document.getElementById('statProducts').textContent     = products.filter(p=>p.active).length + ' aktif';
 
@@ -496,6 +525,48 @@ async function printInvoice() {
   }, 500);
 }
 
+async function exportOrdersCSV() {
+  const orders = await DB.getOrders();
+  const filter = document.getElementById('orderFilter')?.value || 'all';
+  let filteredOrders = orders;
+  if (filter !== 'all') filteredOrders = orders.filter(o => o.status === filter);
+  
+  if (!filteredOrders || filteredOrders.length === 0) {
+    showToast('❌ Tidak ada data pesanan untuk ditarik');
+    return;
+  }
+  
+  const statusLabel = { pending:'Menunggu', process:'Diproses', delivery:'Dikirim', done:'Selesai', cancel:'Dibatal' };
+  
+  let csvContent = " \uFEFFID Pesanan,Tanggal,Nama Pelanggan,No WA,Alamat,Status,Subtotal,Ongkir,Total,Item Pesanan\n";
+  
+  filteredOrders.forEach(o => {
+    const id = o.id;
+    const date = DB.formatDate(o.createdAt).replace(/,/g, '');
+    const name = (o.customer.name||'').replace(/,/g, ' ');
+    const wa = o.customer.whatsapp || '';
+    const addr = (o.customer.address||'').replace(/,/g, ' ').replace(/\n/g, ' ');
+    const stat = statusLabel[o.status] || o.status;
+    const sub = o.subtotal || 0;
+    const ong = o.deliveryFee || 0;
+    const tot = o.total || 0;
+    const items = o.items.map(i => `${i.name} (${i.qty}x)`).join('; ');
+    
+    csvContent += `"${id}","${date}","${name}","${wa}","${addr}","${stat}",${sub},${ong},${tot},"${items}"\n`;
+  });
+  
+  // Create Blob & Link to download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", `Laporan_JastipKu_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('✅ Laporan berhasil diunduh!');
+}
+
 // ---- BANNERS ----
 let editingBannerId = null;
 const BANNER_COLORS = ['#e8501a','#2d8a4e','#7b4fc4','#0a369d','#d4820a','#c0392b','#0c5460','#1a0a00'];
@@ -648,7 +719,7 @@ Object.assign(window, {
   quickUpdateStatus, openProductModal, saveProduct, deleteProduct,
   renderImagePreview, removeProductImage, uploadProductImage, toggleField,
   openCatModal, saveCategory, deleteCat, selectCatEmoji,
-  renderOrders, viewOrderDetail, copyInvoiceText, printInvoice,
+  renderOrders, viewOrderDetail, copyInvoiceText, printInvoice, exportOrdersCSV,
   openBannerModal, saveBanner, deleteBanner, selectBannerColor,
   saveSettings, resetData, closeModal
 });
