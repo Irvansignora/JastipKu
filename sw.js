@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jastipku-v1.4';
+const CACHE_NAME = 'jastipku-v1.5';
 const ASSETS = [
   '/',
   '/index.html',
