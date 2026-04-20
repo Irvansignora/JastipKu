@@ -221,7 +221,10 @@ async function renderCartPage() {
   emptyEl.style.display = 'none';
 
   const subtotal = cart.reduce((s,i) => s+i.price*i.qty, 0);
-  const delivery = s.deliveryFee || 3000;
+  const totalItems = cart.reduce((s,i) => s+i.qty, 0);
+  const baseDelivery = s.deliveryFee || 3000;
+  const additionalDelivery = s.additionalDeliveryFee || 0;
+  const delivery = totalItems > 0 ? baseDelivery + ((totalItems - 1) * additionalDelivery) : 0;
   const total    = subtotal + delivery;
 
   list.innerHTML = cart.map(item => `
@@ -268,13 +271,17 @@ async function submitOrder() {
   if (!cart.length) return;
   const s        = await DB.getSettings();
   const subtotal = cart.reduce((x,i) => x+i.price*i.qty, 0);
-  const total    = subtotal + (s.deliveryFee||3000);
+  const totalItems = cart.reduce((x,i) => x+i.qty, 0);
+  const baseDelivery = s.deliveryFee || 3000;
+  const additionalDelivery = s.additionalDeliveryFee || 0;
+  const deliveryFee = totalItems > 0 ? baseDelivery + ((totalItems - 1) * additionalDelivery) : 0;
+  const total    = subtotal + deliveryFee;
 
   const order = {
     id: 'ORD-' + DB.genId().toUpperCase(),
     customer: { name, address, note },
     items: [...cart],
-    subtotal, deliveryFee: s.deliveryFee||3000, total,
+    subtotal, deliveryFee: deliveryFee, total,
     status: 'pending',
     createdAt: Date.now(), updatedAt: Date.now(),
   };
@@ -306,7 +313,7 @@ async function submitOrder() {
       itemsText + "\n" +
       "━━━━━━━━━━━━━\n" +
       "Subtotal: " + DB.formatRupiah(subtotal) + "\n" +
-      "Ongkir: " + DB.formatRupiah(s.deliveryFee||3000) + "\n" +
+      "Ongkir: " + DB.formatRupiah(deliveryFee) + "\n" +
       "*TOTAL: " + DB.formatRupiah(total) + "*\n" +
       "━━━━━━━━━━━━━\n" +
       "Terima kasih sudah memesan! 🙏"
