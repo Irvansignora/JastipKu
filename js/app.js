@@ -221,10 +221,10 @@ async function renderCartPage() {
   emptyEl.style.display = 'none';
 
   const subtotal = cart.reduce((s,i) => s+i.price*i.qty, 0);
-  const totalItems = cart.reduce((s,i) => s+i.qty, 0);
+  const totalUniqueItems = cart.length;
   const baseDelivery = s.deliveryFee || 3000;
   const additionalDelivery = s.additionalDeliveryFee || 0;
-  const delivery = totalItems > 0 ? baseDelivery + ((totalItems - 1) * additionalDelivery) : 0;
+  const delivery = totalUniqueItems > 0 ? baseDelivery + ((totalUniqueItems - 1) * additionalDelivery) : 0;
   const total    = subtotal + delivery;
 
   list.innerHTML = cart.map(item => `
@@ -271,10 +271,10 @@ async function submitOrder() {
   if (!cart.length) return;
   const s        = await DB.getSettings();
   const subtotal = cart.reduce((x,i) => x+i.price*i.qty, 0);
-  const totalItems = cart.reduce((x,i) => x+i.qty, 0);
+  const totalUniqueItems = cart.length;
   const baseDelivery = s.deliveryFee || 3000;
   const additionalDelivery = s.additionalDeliveryFee || 0;
-  const deliveryFee = totalItems > 0 ? baseDelivery + ((totalItems - 1) * additionalDelivery) : 0;
+  const deliveryFee = totalUniqueItems > 0 ? baseDelivery + ((totalUniqueItems - 1) * additionalDelivery) : 0;
   const total    = subtotal + deliveryFee;
 
   const order = {
