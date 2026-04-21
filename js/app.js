@@ -227,9 +227,18 @@ async function renderCartPage() {
   const delivery = totalUniqueItems > 0 ? baseDelivery + ((totalUniqueItems - 1) * additionalDelivery) : 0;
   const total    = subtotal + delivery;
 
-  list.innerHTML = cart.map(item => `
+  list.innerHTML = cart.map(item => {
+    const p = allProducts.find(x => x.id === item.id) || item;
+    const imgHtml = p.imageUrl 
+      ? `<img src="${CLOUDINARY.mini(p.imageUrl, 80)}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">` 
+      : '';
+    const emojiHtml = `<span style="${p.imageUrl?'display:none':''}">${item.emoji}</span>`;
+    
+    return `
     <div class="cart-item">
-      <span class="cart-emoji">${item.emoji}</span>
+      <div class="cart-emoji" style="position:relative; width:45px; height:45px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        ${imgHtml}${emojiHtml}
+      </div>
       <div class="cart-info">
         <div class="cart-name">${item.name}</div>
         <div class="cart-price">${DB.formatRupiah(item.price)} × ${item.qty} = ${DB.formatRupiah(item.price*item.qty)}</div>
@@ -239,7 +248,8 @@ async function renderCartPage() {
         <span class="qty-num">${item.qty}</span>
         <button class="qty-btn" onclick="cartQty('${item.id}',1)">+</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   summary.style.display = 'block';
   summary.innerHTML = `
