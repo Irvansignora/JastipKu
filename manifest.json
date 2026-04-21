@@ -1,21 +1,21 @@
 {
-  "name": "JastipKu - Jastip F&B Desa",
-  "short_name": "JastipKu",
-  "description": "Layanan jasa titip makanan & minuman untuk wilayah desa",
+  "name": "Drazzcorp - Jajanan Kencana",
+  "short_name": "Jajanan Kencana",
+  "description": "Layanan jasa titip makanan & minuman untuk wilayah kencana",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a0a00",
   "theme_color": "#e8501a",
   "orientation": "portrait",
   "icons": [
-    { "src": "icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
-    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
-    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
-    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
-    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "72x72", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "96x96", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "128x128", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "144x144", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "152x152", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "192x192", "type": "image/jpg", "purpose": "any maskable" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "384x384", "type": "image/jpg" },
+    { "src": "https://res.cloudinary.com/dyhvx9wit/image/upload/v1776743866/drazzcorp_z6vddg.jpg", "sizes": "512x512", "type": "image/jpg", "purpose": "any maskable" }
   ],
   "categories": ["food", "shopping", "lifestyle"],
   "screenshots": []
