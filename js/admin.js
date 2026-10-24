@@ -295,7 +295,14 @@ function toggleField(toggleId, valId) {
 
 // ---- CATEGORIES ----
 let editingCatId = null;
-const CAT_EMOJIS = ['🍱','🍜','🍔','🥤','🧃','🍿','🧊','🥩','🍰','🌮','🥗','🍣','🍝','🥘','🍛','☕','🍵','🥞','🎂'];
+const CAT_EMOJI_GROUPS = [
+  { label:'🍽️ Makanan & Minuman', items:['🍱','🍜','🍔','🥤','🧃','🍿','🧊','🥩','🍰','🌮','🥗','🍣','🍝','🥘','🍛','☕','🍵','🥞','🎂'] },
+  { label:'🏍️ Kendaraan & Antar', items:['🛵','🏍️','🚗','🚚','🛺','🚲','🚛','📦','🛣️','⛽','🗺️','📍'] },
+  { label:'🙋 Orang & Layanan',   items:['🙋','🙋‍♂️','🧑','🧑‍🔧','👷','🧑‍🍳','🧑‍💻','👨‍💼','💆','🤝','👥','🧑‍🤝‍🧑'] },
+  { label:'🛠️ Peralatan & Servis', items:['🔧','🛠️','🔨','🪛','🧰','🔌','💡','🧹','🧺','🪣','🧽','✂️'] },
+  { label:'🛍️ Belanjaan',         items:['🛍️','🛒','🎁','👕','👟','👜','🧸','📱','💄','🧴','💊','📚'] }
+];
+const CAT_EMOJIS = CAT_EMOJI_GROUPS.flatMap(g => g.items);
 
 async function renderCategories() {
   const cats     = await DB.getCategories();
@@ -326,8 +333,11 @@ async function openCatModal(id = null) {
   document.getElementById('cEmojiVal').value = c.emoji;
   document.getElementById('cActive').className = 'toggle' + (c.active?' on':'');
   document.getElementById('cActiveVal').value  = c.active ? '1' : '0';
-  document.getElementById('catEmojiGrid').innerHTML = CAT_EMOJIS.map(e =>
-    `<div class="emoji-opt ${e===c.emoji?'selected':''}" onclick="selectCatEmoji('${e}')">${e}</div>`
+  document.getElementById('catEmojiGrid').innerHTML = CAT_EMOJI_GROUPS.map(g =>
+    `<div class="emoji-group-label">${g.label}</div>` +
+    g.items.map(e =>
+      `<div class="emoji-opt ${e===c.emoji?'selected':''}" onclick="selectCatEmoji('${e}')">${e}</div>`
+    ).join('')
   ).join('');
   document.getElementById('catModal').classList.add('open');
 }
