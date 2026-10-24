@@ -260,8 +260,13 @@ select.form-control { appearance:none; background-image:url("data:image/svg+xml,
 /* ---- EMOJI PICKER ---- */
 .emoji-grid {
   display:grid; grid-template-columns:repeat(8,1fr); gap:4px;
-  max-height:180px; overflow-y:auto;
+  max-height:240px; overflow-y:auto;
 }
+.emoji-group-label {
+  grid-column:1 / -1; font-size:0.72rem; font-weight:600;
+  color:var(--text3); padding:8px 2px 2px;
+}
+.emoji-group-label:first-child { padding-top:0; }
 .emoji-opt {
   font-size:1.3rem; text-align:center; padding:6px;
   border-radius:8px; cursor:pointer; transition:background 0.15s;
